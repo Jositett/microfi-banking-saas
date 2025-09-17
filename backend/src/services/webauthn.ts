@@ -36,6 +36,7 @@ export class WebAuthnService {
   }
 
   async verifyRegistration(userId: string, response: any) {
+    console.log('Server received response.id:', response.id, 'type:', typeof response.id);
     const challenge = await this.env.USER_SESSIONS.get(`challenge_${userId}`);
     if (!challenge) {
       throw new Error('Challenge not found or expired');
@@ -59,18 +60,11 @@ export class WebAuthnService {
         createdAt: new Date().toISOString()
       };
 
-      // Convert ArrayBuffer to base64url for Cloudflare Workers
-      const credentialIDArray = new Uint8Array(verification.registrationInfo.credentialID);
-      let binary = '';
-      for (let i = 0; i < credentialIDArray.length; i++) {
-        binary += String.fromCharCode(credentialIDArray[i]);
-      }
-      const credentialIDBase64 = btoa(binary)
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=/g, '');
+      // The credential ID is already properly formatted by SimpleWebAuthn
+      // Just use the response.id directly as it's already base64url encoded
+      const credentialIDBase64 = response.id;
       
-      console.log('Generated credential ID:', credentialIDBase64);
+      console.log('Using credential ID from response:', credentialIDBase64);
       console.log('Credential ID length:', credentialIDBase64.length);
       
       await this.env.WEBAUTHN_CREDENTIALS.put(

@@ -35,6 +35,15 @@ webauthnRouter.post('/register/begin', zValidator('json', registrationSchema), a
 webauthnRouter.post('/register/complete', zValidator('json', verificationSchema), async (c) => {
   const { userId, response } = c.req.valid('json');
   
+  // Debug: Log received credential data
+  console.log('Received credential ID type:', typeof response.id);
+  console.log('Received credential ID:', response.id);
+  
+  // Validate credential ID format
+  if (typeof response.id !== 'string' || !response.id) {
+    return c.json({ error: 'Invalid credential ID format' }, 400);
+  }
+  
   try {
     const webauthnService = new WebAuthnService(c.env);
     const verification = await webauthnService.verifyRegistration(userId, response);
