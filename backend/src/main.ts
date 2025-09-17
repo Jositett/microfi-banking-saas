@@ -16,6 +16,7 @@ import { savingsRouter } from './routes/savings';
 import { loansRouter } from './routes/loans';
 import { healthRouter } from './routes/health';
 import { adminRouter } from './routes/admin';
+import { notificationsRouter } from './routes/notifications';
 
 // Import security middleware
 import { securityHeaders } from './middleware/auth';
@@ -34,8 +35,10 @@ export interface Env {
   FLUTTERWAVE_SECRET_KEY: string;
   FLUTTERWAVE_CLIENT_ID: string;
   FLUTTERWAVE_ENCRYPTION_KEY: string;
-  TWILIO_AUTH_TOKEN: string;
-  SENDGRID_API_KEY: string;
+  HUBTEL_CLIENT_ID: string;
+  HUBTEL_CLIENT_SECRET: string;
+  HUBTEL_SENDER_ID: string;
+  RESEND_API_KEY: string;
   ENVIRONMENT?: string;
 }
 
@@ -75,6 +78,7 @@ app.route('/api/payments', paymentsRouter);
 app.route('/api/savings', savingsRouter);
 app.route('/api/loans', loansRouter);
 app.route('/api/admin', adminRouter);
+app.route('/api/notifications', notificationsRouter);
 
 // Error handling
 app.onError(errorHandler);

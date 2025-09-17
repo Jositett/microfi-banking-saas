@@ -12,7 +12,7 @@
     "db:create": "wrangler d1 create microfi-banking",
     "kv:create": "npm run kv:create:webauthn && npm run kv:create:sessions && npm run kv:create:audit",
     "kv:create:webauthn": "wrangler kv namespace create WEBAUTHN_CREDENTIALS",
-    "kv:create:sessions": "wrangler kv namespace create USER_SESSIONS", 
+    "kv:create:sessions": "wrangler kv namespace create USER_SESSIONS",
     "kv:create:audit": "wrangler kv namespace create AUDIT_LOGS",
     "test": "vitest",
     "type-check": "tsc --noEmit"
@@ -21,6 +21,7 @@
     "@hono/zod-validator": "^0.4.1",
     "@simplewebauthn/server": "^13.2.0",
     "hono": "^4.6.12",
+    "resend": "^6.1.0",
     "zod": "^3.25.67"
   },
   "devDependencies": {

@@ -114,5 +114,10 @@ export const AuditEvents = {
   SUSPICIOUS_ACTIVITY: 'suspicious_activity',
   RATE_LIMIT_EXCEEDED: 'rate_limit_exceeded',
   UNAUTHORIZED_ACCESS: 'unauthorized_access',
-  DATA_EXPORT: 'data_export'
+  DATA_EXPORT: 'data_export',
+
+  // Communication events
+  EMAIL_SENT: 'email_sent',
+  SMS_SENT: 'sms_sent',
+  NOTIFICATION_SENT: 'notification_sent'
 };
