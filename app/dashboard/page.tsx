@@ -32,10 +32,17 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
+    // Check authentication
+    const token = localStorage.getItem("auth_token")
     const userData = localStorage.getItem("microfi_user")
-    if (userData) {
-      setUser(JSON.parse(userData))
+    
+    if (!token || !userData) {
+      // Redirect to login if not authenticated
+      window.location.href = "/"
+      return
     }
+    
+    setUser(JSON.parse(userData))
     loadDashboardData()
   }, [])
 
@@ -46,8 +53,8 @@ export default function DashboardPage() {
         secureApi.getTransactions(10, 0)
       ])
       
-      setAccounts(accountsData.accounts || [])
-      setTransactions(transactionsData.transactions || [])
+      setAccounts((accountsData as any).accounts || [])
+      setTransactions((transactionsData as any).transactions || [])
     } catch (error) {
       console.error('Failed to load dashboard data:', error)
     } finally {
@@ -85,7 +92,9 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Icons.Shield className="w-4 h-4 text-green-500" />
+            <div className="w-4 h-4 text-green-500">
+              <Icons.Shield />
+            </div>
             MFA Protected
           </div>
         </div>
@@ -95,7 +104,9 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
-              <Icons.CreditCard className="h-4 w-4 text-muted-foreground" />
+              <div className="h-4 w-4 text-muted-foreground">
+                <Icons.CreditCard />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatBalance(totalBalance)}</div>
@@ -108,7 +119,9 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Recent Transactions</CardTitle>
-              <Icons.ArrowRight className="h-4 w-4 text-muted-foreground" />
+              <div className="h-4 w-4 text-muted-foreground">
+                <Icons.ArrowRight />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{transactions.length}</div>
@@ -121,7 +134,9 @@ export default function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Security Status</CardTitle>
-              <Icons.Shield className="h-4 w-4 text-green-500" />
+              <div className="h-4 w-4 text-green-500">
+                <Icons.Shield />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-green-600">Secure</div>
@@ -146,7 +161,9 @@ export default function DashboardPage() {
                 <div key={account.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                      <Icons.CreditCard className="w-5 h-5 text-primary-foreground" />
+                      <div className="w-5 h-5 text-primary-foreground">
+                        <Icons.CreditCard />
+                      </div>
                     </div>
                     <div>
                       <p className="font-medium">{account.type} Account</p>
@@ -183,7 +200,9 @@ export default function DashboardPage() {
                 <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10 bg-muted rounded-full flex items-center justify-center">
-                      <Icons.ArrowRight className="w-5 h-5" />
+                      <div className="w-5 h-5">
+                        <Icons.ArrowRight />
+                      </div>
                     </div>
                     <div>
                       <p className="font-medium">{transaction.description || transaction.type}</p>

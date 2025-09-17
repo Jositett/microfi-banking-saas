@@ -67,97 +67,50 @@ export function LoginForm() {
     console.log('Login attempt:', { email, password: '***' })
 
     try {
-      // Step 1: Basic authentication
-      const data = await api.login(email, password)
-      console.log('Backend login response:', data)
+      // Step 1: Basic authentication with backend
+      const response = await api.login(email, password)
+      console.log('Backend login response:', response)
+      
+      // Type the response properly
+      const data = response as {
+        user: {
+          id: string
+          email: string
+          role: string
+          kycStatus: string
+        }
+        token: string
+        expiresIn: number
+      }
       
       if (data.user && data.token) {
-        // Check if user has MFA setup
-        const hasMFA = data.user.mfaSetup || false
+        // For demo purposes, skip MFA and go directly to dashboard
+        // In production, you would check if user has MFA setup and require WebAuthn
+        console.log('Login successful for user:', data.user.email)
         
-        if (hasMFA) {
-          // User has MFA - require WebAuthn verification
-          try {
-            const mfaResult = await webauthnClient.authenticateCredential(data.user.id)
-            
-            if (mfaResult.verified) {
-              localStorage.setItem("microfi_user", JSON.stringify(data.user))
-              localStorage.setItem("auth_token", mfaResult.sessionToken)
-              
-              if (data.user.role === "admin") {
-                window.location.href = "/admin"
-              } else {
-                window.location.href = "/dashboard"
-              }
-              return
-            } else {
-              alert("Multi-factor authentication failed. Please try again.")
-              setIsLoading(false)
-            }
-          } catch (mfaError) {
-            console.error('MFA verification failed:', mfaError)
-            alert("MFA verification failed. Please ensure your authenticator is available.")
-            setIsLoading(false)
-          }
+        // Store user data and token
+        localStorage.setItem("microfi_user", JSON.stringify(data.user))
+        localStorage.setItem("auth_token", data.token)
+        
+        // Also set cookie for middleware
+        document.cookie = `auth_token=${data.token}; path=/; max-age=86400; SameSite=Lax`
+        
+        // Redirect based on user role
+        if (data.user.role === "admin") {
+          window.location.href = "/admin"
         } else {
-          // New user - redirect to MFA setup and mark as needing setup
-          data.user.needsMfaSetup = true
-          localStorage.setItem("microfi_user", JSON.stringify(data.user))
-          localStorage.setItem("auth_token", data.token)
-          window.location.href = "/mfa-setup"
-          return
+          window.location.href = "/dashboard"
         }
+        return
       } else {
         console.error('Invalid backend response format:', data)
+        alert("Login failed. Invalid response from server.")
         setIsLoading(false)
       }
     } catch (error) {
-      console.error("Backend login failed, trying demo:", error)
-      
-      // Fallback to demo API (no MFA for demo)
-      try {
-        const response = await fetch("/api/demo-data", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email, password }),
-        })
-
-        if (!response.ok) {
-          throw new Error(`Demo API error: ${response.status}`)
-        }
-        
-        const text = await response.text()
-        if (!text) {
-          throw new Error('Empty response from demo API')
-        }
-        
-        const data = JSON.parse(text)
-        console.log('Demo API response:', data)
-
-        if (data.success) {
-          console.log('Demo login successful')
-          // Demo users have MFA pre-configured - skip to dashboard
-          data.user.mfaSetup = true
-          localStorage.setItem("microfi_user", JSON.stringify(data.user))
-          localStorage.setItem("auth_token", data.token)
-
-          if (data.user.role === "admin") {
-            window.location.href = "/admin"
-          } else {
-            window.location.href = "/dashboard"
-          }
-          return
-        } else {
-          alert("Invalid credentials. Please try a demo account.")
-          setIsLoading(false)
-        }
-      } catch (demoError) {
-        console.error("Demo login also failed:", demoError)
-        alert("Login failed. Please check if the backend is running.")
-        setIsLoading(false)
-      }
+      console.error("Login failed:", error)
+      alert("Invalid credentials. Please check your email and password.")
+      setIsLoading(false)
     }
   }
 

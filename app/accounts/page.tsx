@@ -21,7 +21,9 @@ export default function AccountsPage() {
                 <p className="text-muted-foreground">Manage your banking accounts</p>
               </div>
               <Button>
-                <PlusIcon className="h-4 w-4 mr-2" />
+                <div className="h-4 w-4 mr-2">
+                  <PlusIcon />
+                </div>
                 Open New Account
               </Button>
             </div>

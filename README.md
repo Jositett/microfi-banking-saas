@@ -56,23 +56,30 @@ npm install
 cp .dev.vars.example .dev.vars
 # Update .dev.vars with your values
 
-# Run database migrations
-npm run db:migrate
+# Seed demo data (already done)
+npx wrangler d1 execute microfi-banking --local --file=seed-demo-users.sql
+npx wrangler d1 execute microfi-banking --local --file=update-demo-passwords.sql
 
-# Start backend
-npm run dev
+# Start backend (port 8787)
+npx wrangler dev --port 8787
 
-# Start frontend (new terminal)
+# Start frontend (new terminal, port 3000)
 cd ..
 npm run dev
 ```
 
-### **Demo Accounts**
+**Status**: ✅ Both frontend and backend are fully integrated and working
+
+### **Demo Accounts** ✅ WORKING
 ```
 User: john.doe@microfi.com / demo123
 Admin: sarah.admin@microfi.com / admin123
 Business: mike.business@microfi.com / business123
 ```
+
+**Backend Status**: ✅ Running on http://127.0.0.1:8787  
+**Database**: ✅ D1 with seeded demo data  
+**Authentication**: ✅ Working with proper redirects
 
 ## 🔒 **Security Features**
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { demoUsers } from "../demo-data/route"
+import { demoUsers } from "@/lib/demo-data"
 
 export async function GET() {
   const accounts = Object.values(demoUsers).map((user) => ({

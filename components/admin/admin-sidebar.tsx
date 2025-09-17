@@ -7,16 +7,16 @@ import { Icons } from "@/components/ui/icons"
 import Link from "next/link"
 
 const navigation = [
-  { name: "Dashboard", href: "/admin", icon: Icons.Home },
-  { name: "Users", href: "/admin/users", icon: Icons.Users },
-  { name: "Accounts", href: "/admin/accounts", icon: Icons.CreditCard },
-  { name: "Transactions", href: "/admin/transactions", icon: Icons.FileText },
-  { name: "Reports", href: "/admin/reports", icon: Icons.BarChart3 },
-  { name: "System Logs", href: "/admin/logs", icon: Icons.Database },
-  { name: "Alerts", href: "/admin/alerts", icon: Icons.AlertTriangle },
+  { name: "Dashboard", href: "/admin" as const, icon: Icons.Home },
+  { name: "Users", href: "/admin/users" as const, icon: Icons.Users },
+  { name: "Accounts", href: "/admin/accounts" as const, icon: Icons.CreditCard },
+  { name: "Transactions", href: "/admin/transactions" as const, icon: Icons.FileText },
+  { name: "Reports", href: "/admin/reports" as const, icon: Icons.BarChart3 },
+  { name: "System Logs", href: "/admin/logs" as const, icon: Icons.Database },
+  { name: "Alerts", href: "/admin/alerts" as const, icon: Icons.AlertTriangle },
 ]
 
-const bottomNavigation = [{ name: "Settings", href: "/admin/settings", icon: Icons.Settings }]
+const bottomNavigation = [{ name: "Settings", href: "/admin/settings" as const, icon: Icons.Settings }]
 
 export function AdminSidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false)

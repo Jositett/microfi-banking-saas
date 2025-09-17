@@ -4,8 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "next build",
+    "build:frontend": "next build",
+    "build:backend": "cd backend && npm run type-check",
+    "build": "npm run build:frontend",
     "dev": "next dev",
+    "dev:backend": "cd backend && npm run dev",
     "lint": "next lint",
     "start": "next start",
     "type-check": "tsc --noEmit",

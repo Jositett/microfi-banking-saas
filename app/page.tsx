@@ -57,7 +57,9 @@ export default function HomePage() {
               className="w-full"
               variant="outline"
             >
-              <Icons.Fingerprint className="w-4 h-4 mr-2" />
+              <div className="w-4 h-4 mr-2">
+                <Icons.Fingerprint />
+              </div>
               Sign in with Biometrics
             </Button>
             

@@ -7,19 +7,19 @@ import { Icons } from "@/components/ui/icons"
 import Link from "next/link"
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: Icons.Home },
-  { name: "Accounts", href: "/accounts", icon: Icons.CreditCard },
-  { name: "Savings", href: "/savings", icon: Icons.PiggyBank },
-  { name: "Loans", href: "/loans", icon: Icons.Banknote },
-  { name: "Investments", href: "/investments", icon: Icons.TrendingUp },
-  { name: "Transactions", href: "/transactions", icon: Icons.Receipt },
-  { name: "Reports", href: "/reports", icon: Icons.BarChart3 },
-  { name: "Customers", href: "/customers", icon: Icons.Users },
+  { name: "Dashboard", href: "/dashboard" as const, icon: Icons.Home },
+  { name: "Accounts", href: "/accounts" as const, icon: Icons.CreditCard },
+  { name: "Savings", href: "/savings" as const, icon: Icons.PiggyBank },
+  { name: "Loans", href: "/loans" as const, icon: Icons.Banknote },
+  { name: "Investments", href: "/investments" as const, icon: Icons.TrendingUp },
+  { name: "Transactions", href: "/transactions" as const, icon: Icons.Receipt },
+  { name: "Reports", href: "/reports" as const, icon: Icons.BarChart3 },
+  { name: "Customers", href: "/customers" as const, icon: Icons.Users },
 ]
 
 const bottomNavigation = [
-  { name: "Settings", href: "/settings", icon: Icons.Settings },
-  { name: "Help", href: "/help", icon: Icons.HelpCircle },
+  { name: "Settings", href: "/settings" as const, icon: Icons.Settings },
+  { name: "Help", href: "/help" as const, icon: Icons.HelpCircle },
 ]
 
 export function DashboardSidebar() {

@@ -1,3 +1,6 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { AdminHeader } from "@/components/admin/admin-header"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { AdminOverview } from "@/components/admin/admin-overview"
@@ -5,6 +8,34 @@ import { RecentActivity } from "@/components/admin/recent-activity"
 import { SystemAlerts } from "@/components/admin/system-alerts"
 
 export default function AdminPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  
+  useEffect(() => {
+    // Check authentication and admin role
+    const token = localStorage.getItem("auth_token")
+    const userData = localStorage.getItem("microfi_user")
+    
+    if (!token || !userData) {
+      window.location.href = "/"
+      return
+    }
+    
+    const user = JSON.parse(userData)
+    if (user.role !== "admin") {
+      window.location.href = "/dashboard"
+      return
+    }
+    
+    setIsAuthenticated(true)
+  }, [])
+  
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
   return (
     <div className="flex h-screen bg-background">
       <AdminSidebar />

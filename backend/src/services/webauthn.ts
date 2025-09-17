@@ -4,7 +4,7 @@ import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse 
 } from '@simplewebauthn/server';
-import type { Env } from '../main';
+import type { Env } from '../types/context';
 
 export class WebAuthnService {
   constructor(private env: Env) {}
@@ -13,7 +13,7 @@ export class WebAuthnService {
     const options = await generateRegistrationOptions({
       rpID: this.env.WEBAUTHN_RP_ID,
       rpName: this.env.WEBAUTHN_RP_NAME,
-      userID: new TextEncoder().encode(userId),
+      userID: new Uint8Array(new TextEncoder().encode(userId)),
       userName: userEmail,
       userDisplayName: userEmail,
       attestationType: 'direct',
@@ -52,9 +52,9 @@ export class WebAuthnService {
 
     if (verification.verified && verification.registrationInfo) {
       const credential = {
-        credentialID: verification.registrationInfo.credentialID,
-        publicKey: verification.registrationInfo.credentialPublicKey,
-        counter: verification.registrationInfo.counter || 0,
+        credentialID: verification.registrationInfo.credential.id,
+        publicKey: verification.registrationInfo.credential.publicKey,
+        counter: verification.registrationInfo.credential.counter || 0,
         deviceType: verification.registrationInfo.credentialDeviceType,
         backedUp: verification.registrationInfo.credentialBackedUp,
         createdAt: new Date().toISOString()
@@ -70,24 +70,30 @@ export class WebAuthnService {
       console.log('Credential ID length:', credentialIDBase64.length);
       
       // Convert public key to base64url string for storage
-      const publicKeyBuffer = verification.registrationInfo.credentialPublicKey;
+      const publicKeyBuffer = verification.registrationInfo.credential.publicKey;
       const publicKeyBase64 = btoa(String.fromCharCode(...publicKeyBuffer))
         .replace(/\+/g, '-')
         .replace(/\//g, '_')
         .replace(/=/g, '');
       
+      const credentialData = {
+        credentialID: verification.registrationInfo.credential.id,
+        credentialPublicKey: publicKeyBase64,
+        counter: verification.registrationInfo.credential.counter || 0,
+        deviceType: verification.registrationInfo.credentialDeviceType,
+        backedUp: verification.registrationInfo.credentialBackedUp,
+        createdAt: new Date().toISOString(),
+        credentialIDBase64
+      };
+      
       await this.env.WEBAUTHN_CREDENTIALS.put(
         `${userId}_${credentialIDBase64}`,
-        JSON.stringify({
-          credentialID: verification.registrationInfo.credentialID,
-          credentialPublicKey: publicKeyBase64,
-          counter: verification.registrationInfo.counter || 0,
-          deviceType: verification.registrationInfo.credentialDeviceType,
-          backedUp: verification.registrationInfo.credentialBackedUp,
-          createdAt: new Date().toISOString(),
-          credentialIDBase64
-        })
+        JSON.stringify(credentialData)
       );
+      
+      // Verify storage immediately
+      const stored = await this.env.WEBAUTHN_CREDENTIALS.get(`${userId}_${credentialIDBase64}`);
+      console.log('Verification - credential stored successfully:', !!stored);
       
       console.log('Stored credential with key:', `${userId}_${credentialIDBase64}`);
 
@@ -126,28 +132,35 @@ export class WebAuthnService {
       throw new Error('Authentication challenge not found or expired');
     }
 
-    // Find credential by searching all user credentials
-    const list = await this.env.WEBAUTHN_CREDENTIALS.list({ prefix: `${userId}_` });
-    let storedCredential = null;
-    let credentialKey = '';
+    // Try direct key lookup first
+    const directKey = `${userId}_${response.id}`;
+    let storedCredential = await this.env.WEBAUTHN_CREDENTIALS.get(directKey);
+    let credentialKey = directKey;
     
     console.log('Looking for credential with response.id:', response.id);
-    console.log('Found credentials:', list.keys.map(k => k.name));
+    console.log('Trying direct key:', directKey);
     
-    for (const key of list.keys) {
-      const cred = await this.env.WEBAUTHN_CREDENTIALS.get(key.name);
-      if (cred) {
-        const parsed = JSON.parse(cred);
-        console.log('Checking credential:', key.name, 'with stored ID:', parsed.credentialIDBase64);
-        
-        // Match by credential ID
-        if (parsed.credentialIDBase64 === response.id || key.name.endsWith(response.id)) {
-          storedCredential = cred;
-          credentialKey = key.name;
-          console.log('Found matching credential!');
-          break;
+    if (!storedCredential) {
+      // Fallback to list search
+      const list = await this.env.WEBAUTHN_CREDENTIALS.list({ prefix: `${userId}_` });
+      console.log('Found credentials:', list.keys.map(k => k.name));
+      
+      for (const key of list.keys) {
+        const cred = await this.env.WEBAUTHN_CREDENTIALS.get(key.name);
+        if (cred) {
+          const parsed = JSON.parse(cred);
+          console.log('Checking credential:', key.name, 'with stored ID:', parsed.credentialIDBase64);
+          
+          if (parsed.credentialIDBase64 === response.id || key.name.endsWith(response.id)) {
+            storedCredential = cred;
+            credentialKey = key.name;
+            console.log('Found matching credential!');
+            break;
+          }
         }
       }
+    } else {
+      console.log('Found credential via direct lookup!');
     }
     
     if (!storedCredential) {
@@ -178,8 +191,8 @@ export class WebAuthnService {
       expectedOrigin: this.env.WEBAUTHN_ORIGIN,
       expectedRPID: this.env.WEBAUTHN_RP_ID,
       credential: {
-        credentialID: credential.credentialID,
-        credentialPublicKey: publicKeyBuffer,
+        id: credential.credentialID,
+        publicKey: publicKeyBuffer,
         counter: credential.counter
       },
       requireUserVerification: true
@@ -217,20 +230,24 @@ export class WebAuthnService {
 
   private async getUserCredentials(userId: string) {
     const credentials = [];
-    const list = await this.env.WEBAUTHN_CREDENTIALS.list({ prefix: `${userId}_` });
-    
-    for (const key of list.keys) {
-      const credential = await this.env.WEBAUTHN_CREDENTIALS.get(key.name);
-      if (credential) {
-        const parsed = JSON.parse(credential);
-        if (parsed.credentialID || parsed.credentialIDBase64) {
-          credentials.push({
-            id: parsed.credentialID || parsed.credentialIDBase64,
-            type: 'public-key',
-            transports: ['internal', 'hybrid']
-          });
+    try {
+      const list = await this.env.WEBAUTHN_CREDENTIALS.list({ prefix: `${userId}_` });
+      console.log('getUserCredentials - found keys:', list.keys.map(k => k.name));
+      
+      for (const key of list.keys) {
+        const credential = await this.env.WEBAUTHN_CREDENTIALS.get(key.name);
+        if (credential) {
+          const parsed = JSON.parse(credential);
+          if (parsed.credentialIDBase64) {
+            credentials.push({
+              id: parsed.credentialIDBase64,
+              transports: ['internal' as const, 'hybrid' as const]
+            });
+          }
         }
       }
+    } catch (error) {
+      console.error('Error getting user credentials:', error);
     }
     
     return credentials;
