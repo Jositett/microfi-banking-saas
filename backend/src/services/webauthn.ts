@@ -59,7 +59,14 @@ export class WebAuthnService {
         createdAt: new Date().toISOString()
       };
 
-      const credentialIDBase64 = btoa(String.fromCharCode(...new Uint8Array(verification.registrationInfo.credentialID)));
+      // Use ArrayBuffer to base64url conversion for Cloudflare Workers
+      const credentialIDArray = new Uint8Array(verification.registrationInfo.credentialID);
+      const credentialIDBase64 = btoa(String.fromCharCode.apply(null, Array.from(credentialIDArray)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=/g, '');
+      
+      console.log('Generated credential ID:', credentialIDBase64);
       
       await this.env.WEBAUTHN_CREDENTIALS.put(
         `${userId}_${credentialIDBase64}`,
@@ -74,7 +81,7 @@ export class WebAuthnService {
       await this.env.USER_SESSIONS.delete(`challenge_${userId}`);
 
       await this.logSecurityEvent(userId, 'webauthn_registration', {
-        credentialIDBase64: btoa(String.fromCharCode(...new Uint8Array(verification.registrationInfo.credentialID))),
+        credentialIDBase64,
         deviceType: verification.registrationInfo.credentialDeviceType
       });
     }
