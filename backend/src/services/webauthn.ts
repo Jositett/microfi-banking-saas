@@ -59,15 +59,22 @@ export class WebAuthnService {
         createdAt: new Date().toISOString()
       };
 
+      const credentialIDBase64 = btoa(String.fromCharCode(...new Uint8Array(verification.registrationInfo.credentialID)));
+      
       await this.env.WEBAUTHN_CREDENTIALS.put(
-        `${userId}_${btoa(String.fromCharCode(...new Uint8Array(verification.registrationInfo.credentialID)))}`,
-        JSON.stringify(credential)
+        `${userId}_${credentialIDBase64}`,
+        JSON.stringify({
+          ...credential,
+          credentialIDBase64
+        })
       );
+      
+      console.log('Stored credential with key:', `${userId}_${credentialIDBase64}`);
 
       await this.env.USER_SESSIONS.delete(`challenge_${userId}`);
 
       await this.logSecurityEvent(userId, 'webauthn_registration', {
-        credentialID: btoa(String.fromCharCode(...new Uint8Array(verification.registrationInfo.credentialID))),
+        credentialIDBase64: btoa(String.fromCharCode(...new Uint8Array(verification.registrationInfo.credentialID))),
         deviceType: verification.registrationInfo.credentialDeviceType
       });
     }
@@ -111,13 +118,13 @@ export class WebAuthnService {
       const cred = await this.env.WEBAUTHN_CREDENTIALS.get(key.name);
       if (cred) {
         const parsed = JSON.parse(cred);
-        console.log('Checking credential:', key.name, 'with ID:', parsed.credentialID);
+        console.log('Checking credential:', key.name, 'with stored ID:', parsed.credentialIDBase64);
         
-        // Try direct comparison first
-        if (key.name.endsWith(response.id)) {
+        // Match by credential ID
+        if (parsed.credentialIDBase64 === response.id || key.name.endsWith(response.id)) {
           storedCredential = cred;
           credentialKey = key.name;
-          console.log('Found matching credential by key suffix');
+          console.log('Found matching credential!');
           break;
         }
       }
@@ -181,9 +188,9 @@ export class WebAuthnService {
       const credential = await this.env.WEBAUTHN_CREDENTIALS.get(key.name);
       if (credential) {
         const parsed = JSON.parse(credential);
-        if (parsed.credentialID) {
+        if (parsed.credentialID || parsed.credentialIDBase64) {
           credentials.push({
-            id: parsed.credentialID,
+            id: parsed.credentialID || parsed.credentialIDBase64,
             type: 'public-key',
             transports: ['internal', 'hybrid']
           });
