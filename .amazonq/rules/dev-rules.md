@@ -18,11 +18,30 @@
      ```
 
 3. **Environment Variables**
-   - JWT_SECRET for authentication
+   - JWT_SECRET for authentication tokens
+   - WEBAUTHN_RP_ID for WebAuthn relying party
+   - WEBAUTHN_ORIGIN for WebAuthn origin validation
    - PAYSTACK_SECRET_KEY for payment processing
    - FLUTTERWAVE_SECRET_KEY for payment processing
    - TWILIO_AUTH_TOKEN for SMS notifications
    - SENDGRID_API_KEY for email notifications
+
+4. **Cloudflare KV Configuration**
+   - Create KV namespaces: `wrangler kv:namespace create WEBAUTHN_CREDENTIALS`
+   - Configure wrangler.toml with KV bindings:
+     ```toml
+     [[kv_namespaces]]
+     binding = "WEBAUTHN_CREDENTIALS"
+     id = "<namespace-id>"
+     
+     [[kv_namespaces]]
+     binding = "USER_SESSIONS"
+     id = "<namespace-id>"
+     
+     [[kv_namespaces]]
+     binding = "AUDIT_LOGS"
+     id = "<namespace-id>"
+     ```
 
 ## Code Standards
 
@@ -50,11 +69,16 @@
    - Always validate transaction amounts > 0
    - Implement double-entry bookkeeping for all transactions
 
-8. **Security Requirements**
-   - Implement role-based access (User/Admin)
-   - Validate all financial operations
-   - Log all sensitive actions for audit trail
-   - Use JWT tokens with short expiration
+8. **Security Requirements - BANK LEVEL**
+   - **WebAuthn MFA MANDATORY**: All authentication must use FIDO2/WebAuthn
+   - **NO TOTP/SMS**: Prohibited due to phishing/SIM swapping vulnerabilities
+   - **NIST SP 800-63B Level 3**: Compliance required for banking operations
+   - **Hardware Security Keys**: Support YubiKey, Touch ID, Face ID, Windows Hello
+   - **Phishing-Resistant**: Only cryptographic authentication methods
+   - **Role-based access**: User/Admin with MFA verification
+   - **Transaction MFA**: Separate WebAuthn challenge for financial operations
+   - **Session Security**: JWT + WebAuthn verification for sensitive actions
+   - **Audit Logging**: All security events logged to KV with immutable timestamps
 
 9. **Transaction Processing**
    - Wrap financial operations in database transactions
@@ -191,12 +215,29 @@
     - Cache frequently accessed data with TTL
     - Implement cache invalidation for financial data updates
 
-29. **Security Middleware**
+29. **Security Middleware - Banking Grade**
     ```ts
+    // Security Headers Middleware
     app.use("*", async (c, next) => {
-      c.header("Content-Security-Policy", "default-src 'self'");
+      c.header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'");
+      c.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
       c.header("X-Frame-Options", "DENY");
       c.header("X-Content-Type-Options", "nosniff");
+      c.header("Referrer-Policy", "strict-origin-when-cross-origin");
+      c.header("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+      await next();
+    });
+    
+    // WebAuthn MFA Middleware
+    app.use("/api/*", async (c, next) => {
+      const token = c.req.header("Authorization")?.replace("Bearer ", "");
+      if (!token) return c.json({ error: "Authentication required" }, 401);
+      
+      const session = await c.env.USER_SESSIONS.get(token);
+      if (!session || !JSON.parse(session).mfaVerified) {
+        return c.json({ error: "MFA verification required" }, 401);
+      }
+      
       await next();
     });
     ```
@@ -245,10 +286,65 @@
     }
     ```
 
-34. **Optimization Checklist**
+34. **WebAuthn MFA Implementation**
+    ```ts
+    // WebAuthn Registration
+    import { generateRegistrationOptions, verifyRegistrationResponse } from '@simplewebauthn/server';
+    
+    app.post('/auth/webauthn/register', async (c) => {
+      const options = await generateRegistrationOptions({
+        rpID: c.env.WEBAUTHN_RP_ID,
+        rpName: 'MicroFi Banking',
+        userID: userId,
+        userName: userEmail,
+        attestationType: 'direct',
+        authenticatorSelection: {
+          authenticatorAttachment: 'platform',
+          userVerification: 'required'
+        }
+      });
+      
+      await c.env.USER_SESSIONS.put(`challenge_${userId}`, options.challenge, { expirationTtl: 300 });
+      return c.json(options);
+    });
+    
+    // WebAuthn Authentication
+    app.post('/auth/webauthn/authenticate', async (c) => {
+      const { response } = await c.req.json();
+      const verification = await verifyAuthenticationResponse({
+        response,
+        expectedChallenge: storedChallenge,
+        expectedOrigin: c.env.WEBAUTHN_ORIGIN,
+        expectedRPID: c.env.WEBAUTHN_RP_ID,
+        authenticator: storedCredential
+      });
+      
+      if (verification.verified) {
+        const sessionToken = generateSecureToken();
+        await c.env.USER_SESSIONS.put(sessionToken, JSON.stringify({
+          userId,
+          mfaVerified: true,
+          lastActivity: Date.now(),
+          expiresAt: Date.now() + 3600000 // 1 hour
+        }));
+        return c.json({ token: sessionToken });
+      }
+    });
+    ```
+
+35. **KV Storage Patterns**
+    - Store WebAuthn credentials in WEBAUTHN_CREDENTIALS namespace
+    - Use USER_SESSIONS for MFA-verified sessions
+    - Log all security events to AUDIT_LOGS with TTL
+    - Implement key rotation for long-lived credentials
+    - Use atomic operations for critical security updates
+
+36. **Optimization Checklist**
     - Use prepared statements with parameter binding for all queries
     - Add indexes for frequent WHERE/JOIN columns (user_id, account_number)
     - Avoid N+1 queries with JOINs or batched queries
     - Wrap database operations in retry logic for transient errors
     - Use `wrangler dev --local` for local testing with D1
     - Implement connection pooling for high-traffic scenarios
+    - Cache WebAuthn credentials in KV for sub-100ms authentication
+    - Use edge-optimized KV for global MFA verification

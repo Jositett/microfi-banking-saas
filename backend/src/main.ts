@@ -7,6 +7,7 @@ import { errorHandler } from './middleware/error';
 
 // Import routes
 import { authRouter } from './routes/auth';
+import { webauthnRouter } from './routes/webauthn';
 import { accountsRouter } from './routes/accounts';
 import { paymentsRouter } from './routes/payments';
 import { savingsRouter } from './routes/savings';
@@ -15,6 +16,12 @@ import { loansRouter } from './routes/loans';
 export interface Env {
   DB: D1Database;
   JWT_SECRET: string;
+  WEBAUTHN_RP_ID: string;
+  WEBAUTHN_ORIGIN: string;
+  WEBAUTHN_RP_NAME: string;
+  WEBAUTHN_CREDENTIALS: KVNamespace;
+  USER_SESSIONS: KVNamespace;
+  AUDIT_LOGS: KVNamespace;
   PAYSTACK_SECRET_KEY: string;
   FLUTTERWAVE_SECRET_KEY: string;
   TWILIO_AUTH_TOKEN: string;
@@ -48,6 +55,7 @@ app.get('/health', (c) => {
 
 // Public routes (no auth required)
 app.route('/auth', authRouter);
+app.route('/webauthn', webauthnRouter);
 
 // Protected routes (auth required)
 app.use('/api/*', authMiddleware);
