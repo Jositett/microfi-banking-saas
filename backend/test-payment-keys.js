@@ -14,8 +14,7 @@ async function testPaystack() {
       },
       body: JSON.stringify({
         email: "test@microfi.com",
-        amount: 100000, // 1000 NGN in kobo
-        currency: "NGN"
+        amount: 100000 // 1000 NGN in kobo
       })
     });
 

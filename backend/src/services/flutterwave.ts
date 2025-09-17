@@ -45,8 +45,8 @@ export class FlutterwaveService {
   
   async initializePayment(amount: number, email: string, userId: string, reference?: string) {
     // Validate API key exists
-    if (!this.env.FLUTTERWAVE_SECRET_KEY || !this.env.FLUTTERWAVE_SECRET_KEY.startsWith('FLWSECK_TEST-')) {
-      throw new Error('Invalid Flutterwave API key configuration');
+    if (!this.env.FLUTTERWAVE_SECRET_KEY) {
+      throw new Error('Flutterwave API key not configured');
     }
 
     const txRef = reference || `microfi_flw_${userId}_${Date.now()}`;
