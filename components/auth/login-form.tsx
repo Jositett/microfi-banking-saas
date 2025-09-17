@@ -55,21 +55,30 @@ export function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     setIsLoading(true)
+    console.log('Login attempt:', { email, password: '***' })
 
     try {
       // Try backend API first
       const data = await api.login(email, password)
+      console.log('Backend login response:', data)
       
-      // Store user data in localStorage
-      localStorage.setItem("microfi_user", JSON.stringify(data.user))
-      localStorage.setItem("microfi_token", data.token)
+      // Backend returns user and token directly
+      if (data.user && data.token) {
+        // Store user data in localStorage
+        localStorage.setItem("microfi_user", JSON.stringify(data.user))
+        localStorage.setItem("auth_token", data.token)
 
-      // Redirect based on user role
-      if (data.user.role === "admin") {
-        window.location.href = "/admin"
+        // Redirect based on user role
+        if (data.user.role === "admin") {
+          window.location.href = "/admin"
+        } else {
+          window.location.href = "/dashboard"
+        }
+        return // Exit early on success
       } else {
-        window.location.href = "/dashboard"
+        console.error('Invalid backend response format:', data)
       }
     } catch (error) {
       console.error("Backend login failed, trying demo:", error)
@@ -88,7 +97,7 @@ export function LoginForm() {
 
         if (data.success) {
           localStorage.setItem("microfi_user", JSON.stringify(data.user))
-          localStorage.setItem("microfi_token", data.token)
+          localStorage.setItem("auth_token", data.token)
 
           if (data.user.role === "admin") {
             window.location.href = "/admin"
