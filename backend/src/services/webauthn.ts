@@ -59,14 +59,19 @@ export class WebAuthnService {
         createdAt: new Date().toISOString()
       };
 
-      // Use ArrayBuffer to base64url conversion for Cloudflare Workers
+      // Convert ArrayBuffer to base64url for Cloudflare Workers
       const credentialIDArray = new Uint8Array(verification.registrationInfo.credentialID);
-      const credentialIDBase64 = btoa(String.fromCharCode.apply(null, Array.from(credentialIDArray)))
+      let binary = '';
+      for (let i = 0; i < credentialIDArray.length; i++) {
+        binary += String.fromCharCode(credentialIDArray[i]);
+      }
+      const credentialIDBase64 = btoa(binary)
         .replace(/\+/g, '-')
         .replace(/\//g, '_')
         .replace(/=/g, '');
       
       console.log('Generated credential ID:', credentialIDBase64);
+      console.log('Credential ID length:', credentialIDBase64.length);
       
       await this.env.WEBAUTHN_CREDENTIALS.put(
         `${userId}_${credentialIDBase64}`,
