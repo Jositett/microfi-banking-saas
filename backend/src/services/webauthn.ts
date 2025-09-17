@@ -54,11 +54,13 @@ export class WebAuthnService {
       const credential = {
         credentialID: verification.registrationInfo.credentialID,
         publicKey: verification.registrationInfo.credentialPublicKey,
-        counter: verification.registrationInfo.counter,
+        counter: verification.registrationInfo.counter || 0,
         deviceType: verification.registrationInfo.credentialDeviceType,
         backedUp: verification.registrationInfo.credentialBackedUp,
         createdAt: new Date().toISOString()
       };
+      
+      console.log('Storing credential with counter:', credential.counter);
 
       // The credential ID is already properly formatted by SimpleWebAuthn
       // Just use the response.id directly as it's already base64url encoded
@@ -70,7 +72,12 @@ export class WebAuthnService {
       await this.env.WEBAUTHN_CREDENTIALS.put(
         `${userId}_${credentialIDBase64}`,
         JSON.stringify({
-          ...credential,
+          credentialID: credential.credentialID,
+          publicKey: credential.publicKey,
+          counter: credential.counter,
+          deviceType: credential.deviceType,
+          backedUp: credential.backedUp,
+          createdAt: credential.createdAt,
           credentialIDBase64
         })
       );
@@ -143,6 +150,13 @@ export class WebAuthnService {
 
     const credential = JSON.parse(storedCredential);
     
+    console.log('Credential object:', credential);
+    console.log('Counter value:', credential.counter);
+    
+    if (typeof credential.counter !== 'number') {
+      throw new Error(`Invalid counter type: ${typeof credential.counter}. Expected number.`);
+    }
+    
     const verification = await verifyAuthenticationResponse({
       response,
       expectedChallenge: challenge,
@@ -151,7 +165,7 @@ export class WebAuthnService {
       authenticator: {
         credentialID: credential.credentialID,
         credentialPublicKey: credential.publicKey,
-        counter: credential.counter || 0
+        counter: credential.counter
       },
       requireUserVerification: true
     });
