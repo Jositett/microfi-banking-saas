@@ -66,32 +66,18 @@ export function LoginForm() {
       console.log('Backend login response:', data)
       
       if (data.user && data.token) {
-        // Step 2: WebAuthn MFA verification
-        try {
-          const mfaResult = await webauthnClient.authenticateCredential(data.user.id)
-          
-          if (mfaResult.verified) {
-            console.log('MFA verification successful')
-            // Store MFA-verified session
-            localStorage.setItem("microfi_user", JSON.stringify(data.user))
-            localStorage.setItem("auth_token", mfaResult.sessionToken)
+        // Skip WebAuthn MFA for demo - redirect directly
+        console.log('Backend login successful, redirecting...')
+        localStorage.setItem("microfi_user", JSON.stringify(data.user))
+        localStorage.setItem("auth_token", data.token)
 
-            // Redirect based on user role
-            if (data.user.role === "admin") {
-              window.location.href = "/admin"
-            } else {
-              window.location.href = "/dashboard"
-            }
-            return
-          } else {
-            alert("Multi-factor authentication failed. Please try again.")
-            setIsLoading(false)
-          }
-        } catch (mfaError) {
-          console.error('MFA verification failed:', mfaError)
-          alert("MFA verification failed. Please ensure your authenticator is available.")
-          setIsLoading(false)
+        // Redirect based on user role
+        if (data.user.role === "admin") {
+          window.location.href = "/admin"
+        } else {
+          window.location.href = "/dashboard"
         }
+        return
       } else {
         console.error('Invalid backend response format:', data)
         setIsLoading(false)
@@ -117,8 +103,12 @@ export function LoginForm() {
           localStorage.setItem("microfi_user", JSON.stringify(data.user))
           localStorage.setItem("auth_token", data.token)
 
-          // Redirect to MFA setup for demo users
-          window.location.href = "/mfa-setup"
+          // Skip MFA setup for demo - redirect directly
+          if (data.user.role === "admin") {
+            window.location.href = "/admin"
+          } else {
+            window.location.href = "/dashboard"
+          }
           return
         } else {
           alert("Invalid credentials. Please try a demo account.")
