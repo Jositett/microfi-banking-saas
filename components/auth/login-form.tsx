@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Icons } from "@/components/ui/icons"
 import { api } from "@/lib/api"
+import { webauthnClient } from "@/lib/webauthn"
 import Link from "next/link"
 
 interface DemoAccount {
@@ -60,24 +61,37 @@ export function LoginForm() {
     console.log('Login attempt:', { email, password: '***' })
 
     try {
-      // Try backend API first
+      // Step 1: Basic authentication
       const data = await api.login(email, password)
       console.log('Backend login response:', data)
       
-      // Backend returns user and token directly
       if (data.user && data.token) {
-        console.log('Backend login successful, redirecting...')
-        // Store user data in localStorage
-        localStorage.setItem("microfi_user", JSON.stringify(data.user))
-        localStorage.setItem("auth_token", data.token)
+        // Step 2: WebAuthn MFA verification
+        try {
+          const mfaResult = await webauthnClient.authenticateCredential(data.user.id)
+          
+          if (mfaResult.verified) {
+            console.log('MFA verification successful')
+            // Store MFA-verified session
+            localStorage.setItem("microfi_user", JSON.stringify(data.user))
+            localStorage.setItem("auth_token", mfaResult.sessionToken)
 
-        // Redirect based on user role - don't set loading to false
-        if (data.user.role === "admin") {
-          window.location.href = "/admin"
-        } else {
-          window.location.href = "/dashboard"
+            // Redirect based on user role
+            if (data.user.role === "admin") {
+              window.location.href = "/admin"
+            } else {
+              window.location.href = "/dashboard"
+            }
+            return
+          } else {
+            alert("Multi-factor authentication failed. Please try again.")
+            setIsLoading(false)
+          }
+        } catch (mfaError) {
+          console.error('MFA verification failed:', mfaError)
+          alert("MFA verification failed. Please ensure your authenticator is available.")
+          setIsLoading(false)
         }
-        return // Exit early on success
       } else {
         console.error('Invalid backend response format:', data)
         setIsLoading(false)
@@ -85,7 +99,7 @@ export function LoginForm() {
     } catch (error) {
       console.error("Backend login failed, trying demo:", error)
       
-      // Fallback to demo API if backend fails
+      // Fallback to demo API (no MFA for demo)
       try {
         const response = await fetch("/api/demo-data", {
           method: "POST",
@@ -99,16 +113,13 @@ export function LoginForm() {
         console.log('Demo API response:', data)
 
         if (data.success) {
-          console.log('Demo login successful, redirecting...')
+          console.log('Demo login successful, redirecting to MFA setup...')
           localStorage.setItem("microfi_user", JSON.stringify(data.user))
           localStorage.setItem("auth_token", data.token)
 
-          if (data.user.role === "admin") {
-            window.location.href = "/admin"
-          } else {
-            window.location.href = "/dashboard"
-          }
-          return // Exit early on success
+          // Redirect to MFA setup for demo users
+          window.location.href = "/mfa-setup"
+          return
         } else {
           alert("Invalid credentials. Please try a demo account.")
           setIsLoading(false)
