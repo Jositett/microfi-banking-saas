@@ -1,0 +1,26 @@
+{
+  "name": "microfi-backend",
+  "version": "1.0.0",
+  "description": "MicroFi Banking SaaS Backend - Cloudflare Workers",
+  "main": "src/main.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "db:migrate": "wrangler d1 migrations apply microfi-banking",
+    "db:execute": "wrangler d1 execute microfi-banking"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.2.0",
+    "hono": "^4.0.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.0.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0",
+    "wrangler": "^4.37.1"
+  }
+}
