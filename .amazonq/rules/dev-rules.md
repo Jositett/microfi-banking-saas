@@ -23,8 +23,10 @@
    - WEBAUTHN_ORIGIN for WebAuthn origin validation
    - PAYSTACK_SECRET_KEY for payment processing
    - FLUTTERWAVE_SECRET_KEY for payment processing
-   - TWILIO_AUTH_TOKEN for SMS notifications
-   - SENDGRID_API_KEY for email notifications
+   - HUBTEL_CLIENT_ID for SMS notifications
+   - HUBTEL_CLIENT_SECRET for SMS authentication
+   - HUBTEL_SENDER_ID for SMS sender identification
+   - RESEND_API_KEY for email notifications
 
 4. **Cloudflare KV Configuration**
    - Create KV namespaces: `wrangler kv:namespace create WEBAUTHN_CREDENTIALS`
@@ -309,11 +311,18 @@
     });
     ```
 
-30. **Payment Gateway Integration**
-    - Implement unified payment interface for Paystack, Flutterwave
-    - Store API keys in Workers Secrets
-    - Handle webhooks for payment confirmations
-    - Implement retry logic for failed transactions
+30. **Payment Gateway Integration** ✅
+    - ✅ Unified payment interface for Paystack, Flutterwave
+    - ✅ API keys stored in Workers Secrets
+    - ✅ Webhook handlers for payment confirmations
+    - ✅ Retry logic for failed transactions
+
+31. **Communication Services Integration** ✅
+    - ✅ Hubtel SMS service for OTPs and alerts
+    - ✅ Resend Email service for notifications
+    - ✅ Banking-grade templates with security messaging
+    - ✅ Comprehensive audit logging for all communications
+    - ✅ Multi-channel notification system
 
 31. **Audit Trail Implementation**
     ```ts
