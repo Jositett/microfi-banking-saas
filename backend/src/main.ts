@@ -15,6 +15,7 @@ import { paymentsRouter } from './routes/payments';
 import { savingsRouter } from './routes/savings';
 import { loansRouter } from './routes/loans';
 import { healthRouter } from './routes/health';
+import { adminRouter } from './routes/admin';
 
 // Import security middleware
 import { securityHeaders } from './middleware/auth';
@@ -71,6 +72,7 @@ app.route('/api/accounts', accountsRouter);
 app.route('/api/payments', paymentsRouter);
 app.route('/api/savings', savingsRouter);
 app.route('/api/loans', loansRouter);
+app.route('/api/admin', adminRouter);
 
 // Error handling
 app.onError(errorHandler);

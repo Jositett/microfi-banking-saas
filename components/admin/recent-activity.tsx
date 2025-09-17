@@ -1,89 +1,88 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { UserPlus, CreditCard, AlertTriangle, Settings, Shield } from "lucide-react"
+import { CreditCard, ArrowUpRight, ArrowDownLeft, Plus } from "lucide-react"
 
-const activities = [
-  {
-    id: "1",
-    type: "user_registration",
-    user: "John Doe",
-    email: "john.doe@example.com",
-    action: "New user registration",
-    time: "2 minutes ago",
-    icon: UserPlus,
-    status: "success",
-  },
-  {
-    id: "2",
-    type: "account_creation",
-    user: "Jane Smith",
-    email: "jane.smith@example.com",
-    action: "Created business account",
-    time: "15 minutes ago",
-    icon: CreditCard,
-    status: "success",
-  },
-  {
-    id: "3",
-    type: "security_alert",
-    user: "System",
-    email: "system@microfi.com",
-    action: "Failed login attempts detected",
-    time: "1 hour ago",
-    icon: AlertTriangle,
-    status: "warning",
-  },
-  {
-    id: "4",
-    type: "admin_action",
-    user: "Admin User",
-    email: "admin@microfi.com",
-    action: "Updated system settings",
-    time: "2 hours ago",
-    icon: Settings,
-    status: "info",
-  },
-  {
-    id: "5",
-    type: "role_change",
-    user: "Mike Johnson",
-    email: "mike.johnson@example.com",
-    action: "Role changed to Teller",
-    time: "3 hours ago",
-    icon: Shield,
-    status: "info",
-  },
-]
+interface Activity {
+  id: string
+  type: string
+  amount: number
+  description: string
+  timestamp: string
+  status: string
+  userEmail: string
+}
+
+const getActivityIcon = (type: string) => {
+  switch (type) {
+    case 'deposit':
+      return ArrowDownLeft
+    case 'withdrawal':
+      return ArrowUpRight
+    case 'transfer':
+      return ArrowUpRight
+    default:
+      return CreditCard
+  }
+}
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'completed':
+      return 'bg-green-100 text-green-800'
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800'
+    case 'failed':
+      return 'bg-red-100 text-red-800'
+    default:
+      return 'bg-gray-100 text-gray-800'
+  }
+}
 
 export function RecentActivity() {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "success":
-        return "bg-green-100 text-green-800"
-      case "warning":
-        return "bg-yellow-100 text-yellow-800"
-      case "error":
-        return "bg-red-100 text-red-800"
-      case "info":
-        return "bg-blue-100 text-blue-800"
-      default:
-        return "bg-gray-100 text-gray-800"
+  const [activities, setActivities] = useState<Activity[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchRecentActivity()
+  }, [])
+
+  const fetchRecentActivity = async () => {
+    try {
+      const token = localStorage.getItem('auth_token')
+      const response = await fetch('http://127.0.0.1:8787/api/admin/activity', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        setActivities(result.activities)
+      }
+    } catch (error) {
+      console.error('Failed to fetch activity data:', error)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const getIconColor = (status: string) => {
-    switch (status) {
-      case "success":
-        return "text-green-600"
-      case "warning":
-        return "text-yellow-600"
-      case "error":
-        return "text-red-600"
-      case "info":
-        return "text-blue-600"
-      default:
-        return "text-gray-600"
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    
+    if (diffMins < 60) {
+      return `${diffMins} minutes ago`
+    } else if (diffMins < 1440) {
+      return `${Math.floor(diffMins / 60)} hours ago`
+    } else {
+      return date.toLocaleDateString()
     }
   }
 
@@ -95,37 +94,58 @@ export function RecentActivity() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {activities.map((activity) => (
-            <div key={activity.id} className="flex items-center space-x-4">
-              <div className={`p-2 rounded-full bg-muted ${getIconColor(activity.status)}`}>
-                <activity.icon className="h-4 w-4" />
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-foreground truncate">{activity.action}</p>
-                  <Badge className={getStatusColor(activity.status)}>{activity.status}</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Avatar className="h-5 w-5">
-                      <AvatarImage src="/placeholder.svg?key=user" alt={activity.user} />
-                      <AvatarFallback className="text-xs">
-                        {activity.user
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <p className="text-xs text-muted-foreground">
-                      {activity.user} • {activity.email}
-                    </p>
+          {loading ? (
+            <div className="space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <div className="animate-pulse">
+                    <div className="h-8 w-8 bg-muted rounded-full"></div>
                   </div>
-                  <span className="text-xs text-muted-foreground">{activity.time}</span>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                    <div className="h-3 bg-muted rounded w-1/2"></div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          ))}
+          ) : activities.length > 0 ? (
+            activities.map((activity) => {
+              const IconComponent = getActivityIcon(activity.type)
+              return (
+                <div key={activity.id} className="flex items-center space-x-4">
+                  <div className="p-2 rounded-full bg-muted">
+                    <IconComponent className="h-4 w-4" />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {activity.description || `${activity.type} transaction`}
+                      </p>
+                      <Badge className={getStatusColor(activity.status)}>{activity.status}</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Avatar className="h-5 w-5">
+                          <AvatarFallback className="text-xs">
+                            {activity.userEmail.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <p className="text-xs text-muted-foreground">
+                          {activity.userEmail} • ₵{activity.amount.toFixed(2)}
+                        </p>
+                      </div>
+                      <span className="text-xs text-muted-foreground">{formatTime(activity.timestamp)}</span>
+                    </div>
+                  </div>
+                </div>
+              )
+            })
+          ) : (
+            <div className="text-center text-muted-foreground py-8">
+              No recent activity found
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

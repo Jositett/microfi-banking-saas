@@ -91,6 +91,23 @@ class SecureApiClient {
       body: JSON.stringify({ amount, termMonths })
     });
   }
+
+  // Admin endpoints
+  async getAdminOverview() {
+    return this.secureRequest('/api/admin/overview');
+  }
+
+  async getAdminActivity() {
+    return this.secureRequest('/api/admin/activity');
+  }
+
+  async getAdminAlerts() {
+    return this.secureRequest('/api/admin/alerts');
+  }
+
+  async getAdminUsers(limit = 50, offset = 0) {
+    return this.secureRequest(`/api/admin/users?limit=${limit}&offset=${offset}`);
+  }
 }
 
 export const secureApi = new SecureApiClient();
