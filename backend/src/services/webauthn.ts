@@ -104,19 +104,27 @@ export class WebAuthnService {
     let storedCredential = null;
     let credentialKey = '';
     
+    console.log('Looking for credential with response.id:', response.id);
+    console.log('Found credentials:', list.keys.map(k => k.name));
+    
     for (const key of list.keys) {
       const cred = await this.env.WEBAUTHN_CREDENTIALS.get(key.name);
       if (cred) {
         const parsed = JSON.parse(cred);
-        if (parsed.credentialID && btoa(String.fromCharCode(...new Uint8Array(parsed.credentialID))) === response.id) {
+        console.log('Checking credential:', key.name, 'with ID:', parsed.credentialID);
+        
+        // Try direct comparison first
+        if (key.name.endsWith(response.id)) {
           storedCredential = cred;
           credentialKey = key.name;
+          console.log('Found matching credential by key suffix');
           break;
         }
       }
     }
     
     if (!storedCredential) {
+      console.error('No matching credential found for response.id:', response.id);
       throw new Error('Credential not found');
     }
 
