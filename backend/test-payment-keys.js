@@ -1,85 +1,85 @@
-// Quick test for payment gateway API keys
-const BASE_URL = 'http://127.0.0.1:8787';
+// Test Payment Gateway API Keys
+const PAYSTACK_SECRET_KEY = "sk_test_81fd70fdcd770d52a85a30b9992b544f26d53265";
+const FLUTTERWAVE_SECRET_KEY = "FLWSECK_TEST-vZPqTJPyBQyoYJozN7T44RzHsmpvlhzT";
 
-async function testPaymentKeys() {
-  console.log('🔑 Testing Payment Gateway API Keys\n');
+async function testPaystack() {
+  console.log("🔍 Testing Paystack API...");
   
   try {
-    // Login first
-    const loginResponse = await fetch(`${BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: 'john.doe@microfi.com',
-        password: 'demo123'
-      })
-    });
-    
-    const loginResult = await loginResponse.json();
-    const token = loginResult.token;
-    
-    if (!token) {
-      throw new Error('Login failed');
-    }
-    
-    console.log('✅ Authentication successful\n');
-    
-    // Test Paystack
-    console.log('💳 Testing Paystack...');
-    const paystackResponse = await fetch(`${BASE_URL}/api/payments/paystack/initialize`, {
+    const response = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${PAYSTACK_SECRET_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        amount: 100,
-        email: 'john.doe@microfi.com'
+        email: "test@microfi.com",
+        amount: 100000, // 1000 NGN in kobo
+        currency: "NGN"
       })
     });
+
+    const result = await response.json();
     
-    if (paystackResponse.ok) {
-      const paystackResult = await paystackResponse.json();
-      console.log('✅ Paystack: SUCCESS');
-      console.log('   Authorization URL:', paystackResult.data?.authorization_url ? 'Generated' : 'Missing');
+    if (response.ok && result.status) {
+      console.log("✅ Paystack: API key valid");
+      console.log(`   Reference: ${result.data.reference}`);
     } else {
-      const error = await paystackResponse.text();
-      console.log('❌ Paystack: FAILED');
-      console.log('   Error:', error);
+      console.log("❌ Paystack: API key invalid");
+      console.log(`   Error: ${result.message}`);
     }
-    
-    console.log();
-    
-    // Test Flutterwave
-    console.log('🌊 Testing Flutterwave...');
-    const flutterwaveResponse = await fetch(`${BASE_URL}/api/payments/flutterwave/initialize`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        amount: 100,
-        email: 'john.doe@microfi.com'
-      })
-    });
-    
-    if (flutterwaveResponse.ok) {
-      const flutterwaveResult = await flutterwaveResponse.json();
-      console.log('✅ Flutterwave: SUCCESS');
-      console.log('   Payment Link:', flutterwaveResult.data?.link ? 'Generated' : 'Missing');
-    } else {
-      const error = await flutterwaveResponse.text();
-      console.log('❌ Flutterwave: FAILED');
-      console.log('   Error:', error);
-    }
-    
-    console.log('\n🎯 Payment Gateway Test Complete');
-    
   } catch (error) {
-    console.error('❌ Test failed:', error.message);
-    console.log('\n🔧 Ensure backend server is running with updated environment variables');
+    console.log("❌ Paystack: Connection error");
+    console.log(`   Error: ${error.message}`);
   }
 }
 
-testPaymentKeys();
+async function testFlutterwave() {
+  console.log("🔍 Testing Flutterwave API...");
+  
+  try {
+    const response = await fetch('https://api.flutterwave.com/v3/payments', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        tx_ref: `test_${Date.now()}`,
+        amount: 1000,
+        currency: "NGN",
+        payment_options: "card",
+        customer: {
+          email: "test@microfi.com",
+          phone_number: "08012345678"
+        },
+        redirect_url: "https://microfi.com/callback"
+      })
+    });
+
+    const result = await response.json();
+    
+    if (response.ok && result.status === 'success') {
+      console.log("✅ Flutterwave: API key valid");
+      console.log(`   TX Ref: ${result.data.tx_ref}`);
+    } else {
+      console.log("❌ Flutterwave: API key invalid");
+      console.log(`   Error: ${result.message}`);
+    }
+  } catch (error) {
+    console.log("❌ Flutterwave: Connection error");
+    console.log(`   Error: ${error.message}`);
+  }
+}
+
+async function main() {
+  console.log("🚀 Testing Payment Gateway API Keys\n");
+  
+  await testPaystack();
+  console.log("");
+  await testFlutterwave();
+  
+  console.log("\n✨ Test completed!");
+}
+
+main().catch(console.error);

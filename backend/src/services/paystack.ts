@@ -44,6 +44,11 @@ export class PaystackService {
   constructor(private env: Env) {}
   
   async initializePayment(amount: number, email: string, userId: string, reference?: string) {
+    // Validate API key exists
+    if (!this.env.PAYSTACK_SECRET_KEY || !this.env.PAYSTACK_SECRET_KEY.startsWith('sk_test_')) {
+      throw new Error('Invalid Paystack API key configuration');
+    }
+
     const paymentReference = reference || `microfi_${userId}_${Date.now()}`;
     
     const response = await fetch('https://api.paystack.co/transaction/initialize', {
@@ -56,12 +61,12 @@ export class PaystackService {
         amount: amount * 100, // Convert to kobo
         email,
         reference: paymentReference,
+        currency: 'NGN',
         metadata: { 
           userId,
           source: 'microfi_banking'
         },
-        callback_url: `${this.env.WEBAUTHN_ORIGIN}/payment/callback`,
-        channels: ['card', 'bank', 'ussd', 'qr', 'mobile_money', 'bank_transfer']
+        callback_url: `${this.env.WEBAUTHN_ORIGIN}/payment/callback`
       })
     });
     
@@ -80,6 +85,10 @@ export class PaystackService {
   }
 
   async verifyPayment(reference: string) {
+    if (!this.env.PAYSTACK_SECRET_KEY) {
+      throw new Error('Paystack API key not configured');
+    }
+
     const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
       method: 'GET',
       headers: {

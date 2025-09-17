@@ -44,6 +44,11 @@ export class FlutterwaveService {
   constructor(private env: Env) {}
   
   async initializePayment(amount: number, email: string, userId: string, reference?: string) {
+    // Validate API key exists
+    if (!this.env.FLUTTERWAVE_SECRET_KEY || !this.env.FLUTTERWAVE_SECRET_KEY.startsWith('FLWSECK_TEST-')) {
+      throw new Error('Invalid Flutterwave API key configuration');
+    }
+
     const txRef = reference || `microfi_flw_${userId}_${Date.now()}`;
     
     const response = await fetch('https://api.flutterwave.com/v3/payments', {
@@ -56,15 +61,16 @@ export class FlutterwaveService {
         tx_ref: txRef,
         amount,
         currency: 'NGN',
+        payment_options: 'card,banktransfer',
         redirect_url: `${this.env.WEBAUTHN_ORIGIN}/payment/callback`,
         customer: {
           email,
-          name: email.split('@')[0]
+          name: email.split('@')[0],
+          phonenumber: '08012345678'
         },
         customizations: {
           title: 'MicroFi Banking',
-          description: 'Account funding',
-          logo: `${this.env.WEBAUTHN_ORIGIN}/logo.png`
+          description: 'Account funding'
         },
         meta: {
           userId,
@@ -88,6 +94,10 @@ export class FlutterwaveService {
   }
 
   async verifyPayment(txRef: string) {
+    if (!this.env.FLUTTERWAVE_SECRET_KEY) {
+      throw new Error('Flutterwave API key not configured');
+    }
+
     const response = await fetch(`https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${txRef}`, {
       method: 'GET',
       headers: {
