@@ -15,14 +15,19 @@ class ApiClient {
       ...options,
     };
 
+    console.log('API Request:', `${API_BASE_URL}${endpoint}`, config);
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    console.log('API Response status:', response.status, response.statusText);
     
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Network error' }));
+      console.error('API Error:', error);
       throw new Error(error.error || 'Request failed');
     }
 
-    return response.json();
+    const data = await response.json();
+    console.log('API Response data:', data);
+    return data;
   }
 
   // Auth endpoints
