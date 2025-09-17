@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Icons } from "@/components/ui/icons"
+import { api } from "@/lib/api"
 import Link from "next/link"
 
 interface DemoAccount {
@@ -57,33 +58,50 @@ export function LoginForm() {
     setIsLoading(true)
 
     try {
-      const response = await fetch("/api/demo-data", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      })
+      // Try backend API first
+      const data = await api.login(email, password)
+      
+      // Store user data in localStorage
+      localStorage.setItem("microfi_user", JSON.stringify(data.user))
+      localStorage.setItem("microfi_token", data.token)
 
-      const data = await response.json()
-
-      if (data.success) {
-        // Store user data in localStorage for demo purposes
-        localStorage.setItem("microfi_user", JSON.stringify(data.user))
-        localStorage.setItem("microfi_token", data.token)
-
-        // Redirect based on user role
-        if (data.user.role === "admin") {
-          window.location.href = "/admin"
-        } else {
-          window.location.href = "/dashboard"
-        }
+      // Redirect based on user role
+      if (data.user.role === "admin") {
+        window.location.href = "/admin"
       } else {
-        alert("Invalid credentials. Please try a demo account.")
+        window.location.href = "/dashboard"
       }
     } catch (error) {
-      console.error("Login error:", error)
-      alert("Login failed. Please try again.")
+      console.error("Backend login failed, trying demo:", error)
+      
+      // Fallback to demo API if backend fails
+      try {
+        const response = await fetch("/api/demo-data", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        })
+
+        const data = await response.json()
+
+        if (data.success) {
+          localStorage.setItem("microfi_user", JSON.stringify(data.user))
+          localStorage.setItem("microfi_token", data.token)
+
+          if (data.user.role === "admin") {
+            window.location.href = "/admin"
+          } else {
+            window.location.href = "/dashboard"
+          }
+        } else {
+          alert("Invalid credentials. Please try a demo account.")
+        }
+      } catch (demoError) {
+        console.error("Demo login also failed:", demoError)
+        alert("Login failed. Please check if the backend is running.")
+      }
     } finally {
       setIsLoading(false)
     }

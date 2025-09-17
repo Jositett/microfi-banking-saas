@@ -26,9 +26,10 @@ const app = new Hono<{ Bindings: Env }>();
 // Global middleware
 app.use('*', logger());
 app.use('*', cors({
-  origin: ['http://localhost:3000', 'https://your-frontend-domain.com'],
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://169.254.146.124:3000', 'https://your-frontend-domain.com'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
 }));
 
 // Security headers
