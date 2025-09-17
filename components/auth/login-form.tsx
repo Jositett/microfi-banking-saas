@@ -94,7 +94,8 @@ export function LoginForm() {
             setIsLoading(false)
           }
         } else {
-          // New user - redirect to MFA setup
+          // New user - redirect to MFA setup and mark as needing setup
+          data.user.needsMfaSetup = true
           localStorage.setItem("microfi_user", JSON.stringify(data.user))
           localStorage.setItem("auth_token", data.token)
           window.location.href = "/mfa-setup"

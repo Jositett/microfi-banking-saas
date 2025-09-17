@@ -13,7 +13,7 @@ export class WebAuthnService {
     const options = await generateRegistrationOptions({
       rpID: this.env.WEBAUTHN_RP_ID,
       rpName: this.env.WEBAUTHN_RP_NAME,
-      userID: userId,
+      userID: new TextEncoder().encode(userId),
       userName: userEmail,
       userDisplayName: userEmail,
       attestationType: 'direct',
@@ -60,14 +60,14 @@ export class WebAuthnService {
       };
 
       await this.env.WEBAUTHN_CREDENTIALS.put(
-        `${userId}_${Buffer.from(verification.registrationInfo.credentialID).toString('base64url')}`,
+        `${userId}_${btoa(String.fromCharCode(...new Uint8Array(verification.registrationInfo.credentialID)))}`,
         JSON.stringify(credential)
       );
 
       await this.env.USER_SESSIONS.delete(`challenge_${userId}`);
 
       await this.logSecurityEvent(userId, 'webauthn_registration', {
-        credentialID: Buffer.from(verification.registrationInfo.credentialID).toString('base64url'),
+        credentialID: btoa(String.fromCharCode(...new Uint8Array(verification.registrationInfo.credentialID))),
         deviceType: verification.registrationInfo.credentialDeviceType
       });
     }
@@ -99,7 +99,7 @@ export class WebAuthnService {
       throw new Error('Authentication challenge not found or expired');
     }
 
-    const credentialID = Buffer.from(response.id, 'base64url').toString('base64url');
+    const credentialID = response.id;
     const credentialKey = `${userId}_${credentialID}`;
     const storedCredential = await this.env.WEBAUTHN_CREDENTIALS.get(credentialKey);
     
@@ -160,11 +160,13 @@ export class WebAuthnService {
       const credential = await this.env.WEBAUTHN_CREDENTIALS.get(key.name);
       if (credential) {
         const parsed = JSON.parse(credential);
-        credentials.push({
-          id: parsed.credentialID,
-          type: 'public-key',
-          transports: ['internal', 'hybrid']
-        });
+        if (parsed.credentialID) {
+          credentials.push({
+            id: parsed.credentialID,
+            type: 'public-key',
+            transports: ['internal', 'hybrid']
+          });
+        }
       }
     }
     

@@ -18,6 +18,13 @@ export default function MFASetupPage() {
   }, [router])
 
   const handleMFAComplete = () => {
+    // Mark MFA as setup and redirect to dashboard
+    if (user) {
+      user.mfaSetup = true
+      user.needsMfaSetup = false
+      localStorage.setItem("microfi_user", JSON.stringify(user))
+    }
+    
     if (user?.role === "admin") {
       router.push("/admin")
     } else {
