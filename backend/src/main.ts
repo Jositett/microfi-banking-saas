@@ -18,8 +18,7 @@ import { healthRouter } from './routes/health';
 
 // Import security middleware
 import { securityHeaders } from './middleware/auth';
-import { rateLimiting, mfaVerification } from './middleware/security';
-import { transactionMFA } from './middleware/transaction-mfa';
+import { authRateLimit, apiRateLimit, paymentRateLimit } from './middleware/rate-limiting';
 
 export interface Env {
   DB: D1Database;
@@ -58,14 +57,14 @@ app.get('/health', (c) => {
 
 // Public routes (no auth required)
 app.route('/health', healthRouter);
+app.use('/auth/*', authRateLimit.middleware);
 app.route('/auth', authRouter);
 app.route('/webauthn', webauthnRouter);
 
 // Protected routes (auth required)
+app.use('/api/*', apiRateLimit.middleware);
 app.use('/api/*', authMiddleware);
-// Temporarily disabled for demo mode
-// app.use('/api/*', mfaVerification);
-// app.use('/api/*', transactionMFA);
+app.use('/api/payments/*', paymentRateLimit.middleware);
 app.use('/api/*', auditMiddleware);
 
 app.route('/api/accounts', accountsRouter);

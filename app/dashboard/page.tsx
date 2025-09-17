@@ -4,7 +4,8 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Icons } from "@/components/ui/icons"
 import { SecureTransfer } from "@/components/dashboard/secure-transfer"
-import { PaystackPayment } from "@/components/payments/paystack-payment"
+import { MultiGatewayPayment } from "@/components/payments/multi-gateway-payment"
+import { CrossBrowserWebAuthn } from "@/components/webauthn/cross-browser-webauthn"
 import { secureApi } from "@/lib/secure-api"
 
 interface Account {
@@ -201,12 +202,29 @@ export default function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <PaystackPayment 
-              onSuccess={(reference, amount) => {
-                // Refresh account data after successful payment
+            <MultiGatewayPayment 
+              onSuccess={(reference, amount, gateway) => {
                 loadDashboardData();
               }}
             />
+          </CardContent>
+        </Card>
+
+        {/* WebAuthn Security */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <div className="h-5 w-5">
+                <Icons.Shield />
+              </div>
+              WebAuthn Security
+            </CardTitle>
+            <CardDescription>
+              Cross-browser biometric authentication
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CrossBrowserWebAuthn />
           </CardContent>
         </Card>
 

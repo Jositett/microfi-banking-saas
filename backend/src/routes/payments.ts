@@ -3,6 +3,7 @@ import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { AuditService, AuditEvents } from '../services/audit';
 import { PaystackService } from '../services/paystack';
+import { FlutterwaveService } from '../services/flutterwave';
 import type { Env } from '../main';
 
 const paymentsRouter = new Hono<{ Bindings: Env }>();
@@ -243,6 +244,97 @@ paymentsRouter.post('/paystack/verify', async (c) => {
     }
   } catch (error) {
     console.error('Paystack verification error:', error);
+    return c.json({ error: 'Payment verification failed' }, 500);
+  }
+});
+
+// Flutterwave payment initialization
+paymentsRouter.post('/flutterwave/initialize', async (c) => {
+  try {
+    const user = c.get('user');
+    if (!user) return c.json({ error: 'User not found' }, 401);
+    
+    const { amount, email, reference } = await c.req.json();
+    
+    if (!amount || amount <= 0) {
+      return c.json({ error: 'Invalid amount' }, 400);
+    }
+    
+    const flutterwaveService = new FlutterwaveService(c.env);
+    const result = await flutterwaveService.initializePayment(
+      amount, 
+      email || user.email, 
+      user.id, 
+      reference
+    );
+    
+    return c.json({
+      success: true,
+      data: result.data
+    });
+  } catch (error) {
+    console.error('Flutterwave initialization error:', error);
+    return c.json({ error: 'Payment initialization failed' }, 500);
+  }
+});
+
+// Flutterwave payment verification
+paymentsRouter.post('/flutterwave/verify', async (c) => {
+  try {
+    const user = c.get('user');
+    if (!user) return c.json({ error: 'User not found' }, 401);
+    
+    const { txRef } = await c.req.json();
+    
+    if (!txRef) {
+      return c.json({ error: 'Transaction reference required' }, 400);
+    }
+    
+    const flutterwaveService = new FlutterwaveService(c.env);
+    const result = await flutterwaveService.verifyPayment(txRef);
+    
+    if (result.data.status === 'successful') {
+      const amount = result.data.amount;
+      
+      await c.env.DB.prepare('BEGIN TRANSACTION').run();
+      
+      try {
+        await c.env.DB.prepare(
+          'UPDATE accounts SET balance = balance + ? WHERE user_id = ? AND type = "savings"'
+        ).bind(amount * 100, user.id).run();
+        
+        await c.env.DB.prepare(
+          'INSERT INTO transactions (id, user_id, type, amount, description, reference, status, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)'
+        ).bind(
+          crypto.randomUUID(),
+          user.id,
+          'deposit',
+          amount * 100,
+          'Flutterwave deposit',
+          txRef,
+          'completed'
+        ).run();
+        
+        await c.env.DB.prepare('COMMIT').run();
+        
+        return c.json({
+          success: true,
+          message: 'Payment verified and account credited',
+          amount
+        });
+      } catch (dbError) {
+        await c.env.DB.prepare('ROLLBACK').run();
+        throw dbError;
+      }
+    } else {
+      return c.json({
+        success: false,
+        message: 'Payment verification failed',
+        status: result.data.status
+      });
+    }
+  } catch (error) {
+    console.error('Flutterwave verification error:', error);
     return c.json({ error: 'Payment verification failed' }, 500);
   }
 });
