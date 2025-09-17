@@ -156,14 +156,81 @@
     - Rollback failed transactions
     - Alert admins of critical failures
 
+22. **Error Report Generation**
+    - **Two-Try Rule**: If an issue cannot be resolved after 2 attempts, generate comprehensive error report
+    - **Report Location**: Create in `docs/ERROR-REPORT-[ISSUE-NAME]-[TIMESTAMP].md`
+    - **Report Template**: Use standardized format for external assistance
+    - **Include**: Error logs, affected files, environment details, attempted solutions
+    - **Purpose**: Enable external entities to provide targeted assistance
+    
+    **Error Report Template Structure**:
+    ```markdown
+    # [Issue Name] Error Report
+    
+    ## 🚨 Critical Issue Summary
+    [Brief description of the problem]
+    
+    ## 📋 Error Details
+    ### Primary Issue
+    - Problem: [Specific technical issue]
+    - Impact: [Business/functional impact]
+    - Environment: [Runtime environment details]
+    
+    ### Error Logs
+    ```
+    [Actual error messages and stack traces]
+    ```
+    
+    ### Expected vs Actual
+    - Expected: [What should happen]
+    - Actual: [What actually happens]
+    
+    ## 🔧 Technical Analysis
+    ### Root Cause
+    [Analysis of underlying cause]
+    
+    ### Solutions Attempted
+    1. ❌ [First attempt description]
+    2. ❌ [Second attempt description]
+    
+    ### Code Location
+    **File**: [Affected file path]
+    **Method**: [Function/method name]
+    **Lines**: [Line numbers]
+    
+    ## 📁 Affected Files
+    [List all files involved in the issue]
+    
+    ## 🔍 Environment Details
+    [Runtime, dependencies, browser, OS details]
+    
+    ## 🛠️ Debugging Information
+    [Step-by-step flow analysis]
+    
+    ## 🎯 Potential Solutions
+    [Suggested approaches for resolution]
+    
+    ## 📞 Support Request
+    ### Assistance Needed
+    [Specific help required]
+    
+    ### Expected Outcome
+    [Desired end result]
+    
+    ## 📊 Impact Assessment
+    ### Severity: [Critical/High/Medium/Low]
+    ### Affected Features: [List impacted functionality]
+    ### Business Impact: [Business consequences]
+    ```
+
 ## Monitoring & Maintenance
 
-22. **Logging Standards**
+23. **Logging Standards**
     - Log all financial transactions
     - Track user authentication events
     - Monitor API response times
 
-23. **Data Backup**
+24. **Data Backup**
     - Regular D1 database backups
     - Test restore procedures
     - Maintain audit trails for compliance

@@ -13,7 +13,8 @@
     "format:check": "prettier --check .",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run tests"
+    "test:run": "vitest run tests",
+    "error-report": "node scripts/generate-error-report.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
