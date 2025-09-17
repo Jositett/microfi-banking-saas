@@ -1,27 +1,33 @@
 {
-  "name": "microfi-backend",
+  "name": "microfi-banking-backend",
   "version": "1.0.0",
   "description": "MicroFi Banking SaaS Backend - Cloudflare Workers",
   "main": "src/main.ts",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "test": "vitest",
-    "test:coverage": "vitest --coverage",
+    "deploy:production": "wrangler deploy --env production",
     "db:migrate": "wrangler d1 migrations apply microfi-banking",
-    "db:execute": "wrangler d1 execute microfi-banking"
+    "db:migrate:production": "wrangler d1 migrations apply microfi-banking --env production",
+    "db:create": "wrangler d1 create microfi-banking",
+    "kv:create": "npm run kv:create:webauthn && npm run kv:create:sessions && npm run kv:create:audit",
+    "kv:create:webauthn": "wrangler kv namespace create WEBAUTHN_CREDENTIALS",
+    "kv:create:sessions": "wrangler kv namespace create USER_SESSIONS", 
+    "kv:create:audit": "wrangler kv namespace create AUDIT_LOGS",
+    "test": "vitest",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@hono/zod-validator": "^0.2.0",
+    "@hono/zod-validator": "^0.4.1",
     "@simplewebauthn/server": "^13.2.0",
-    "hono": "^4.0.0",
-    "zod": "^3.22.0"
+    "hono": "^4.6.12",
+    "zod": "^3.25.67"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.0.0",
-    "@types/node": "^20.0.0",
-    "typescript": "^5.0.0",
-    "vitest": "^1.0.0",
+    "@cloudflare/workers-types": "^4.20241218.0",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^3.2.4",
     "wrangler": "^4.37.1"
   }
 }

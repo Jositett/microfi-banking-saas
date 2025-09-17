@@ -12,6 +12,7 @@ import { accountsRouter } from './routes/accounts';
 import { paymentsRouter } from './routes/payments';
 import { savingsRouter } from './routes/savings';
 import { loansRouter } from './routes/loans';
+import { healthRouter } from './routes/health';
 
 // Import security middleware
 import { securityHeaders, rateLimiting, mfaVerification } from './middleware/security';
@@ -53,6 +54,7 @@ app.get('/health', (c) => {
 });
 
 // Public routes (no auth required)
+app.route('/health', healthRouter);
 app.route('/auth', authRouter);
 app.route('/webauthn', webauthnRouter);
 

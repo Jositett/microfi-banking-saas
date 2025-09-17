@@ -1,0 +1,15 @@
+# Development Environment Variables
+# Copy this file to .dev.vars and update with your actual values
+
+JWT_SECRET=your-secure-jwt-secret-here
+WEBAUTHN_RP_ID=localhost
+WEBAUTHN_ORIGIN=http://localhost:3000
+WEBAUTHN_RP_NAME=MicroFi Banking SaaS
+
+# Payment Gateway Keys (Development)
+PAYSTACK_SECRET_KEY=sk_test_your_paystack_test_key
+FLUTTERWAVE_SECRET_KEY=FLWSECK_TEST-your_flutterwave_test_key
+
+# Notification Services
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+SENDGRID_API_KEY=SG.your_sendgrid_api_key
