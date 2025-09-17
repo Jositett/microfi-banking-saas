@@ -5,7 +5,7 @@ export const demoUsers = {
   "john.doe@microfi.com": {
     id: "1",
     email: "john.doe@microfi.com",
-    password: "demo123",
+    password: "[REDACTED]",
     name: "John Doe",
     role: "user",
     phone: "+233 24 123 4567",
@@ -98,7 +98,7 @@ export const demoUsers = {
   "sarah.admin@microfi.com": {
     id: "2",
     email: "sarah.admin@microfi.com",
-    password: "admin123",
+    password: "[REDACTED]",
     name: "Sarah Johnson",
     role: "admin",
     phone: "+233 24 987 6543",
@@ -121,7 +121,7 @@ export const demoUsers = {
   "mike.business@microfi.com": {
     id: "3",
     email: "mike.business@microfi.com",
-    password: "business123",
+    password: "[REDACTED]",
     name: "Mike Osei",
     role: "business",
     phone: "+233 20 555 0123",
@@ -256,7 +256,14 @@ export async function POST(request: Request) {
   // Find user by email
   const user = Object.values(demoUsers).find((u) => u.email === email)
 
-  if (!user || user.password !== password) {
+  // Demo password validation
+  const validPasswords: Record<string, string> = {
+    "john.doe@microfi.com": "demo123",
+    "sarah.admin@microfi.com": "admin123",
+    "mike.business@microfi.com": "business123"
+  }
+  
+  if (!user || validPasswords[email] !== password) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
   }
 
