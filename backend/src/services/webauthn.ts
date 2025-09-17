@@ -73,7 +73,7 @@ export class WebAuthnService {
         `${userId}_${credentialIDBase64}`,
         JSON.stringify({
           credentialID: credential.credentialID,
-          publicKey: credential.publicKey,
+          credentialPublicKey: credential.publicKey,
           counter: credential.counter,
           deviceType: credential.deviceType,
           backedUp: credential.backedUp,
@@ -164,8 +164,9 @@ export class WebAuthnService {
       expectedRPID: this.env.WEBAUTHN_RP_ID,
       authenticator: {
         credentialID: credential.credentialID,
-        credentialPublicKey: credential.publicKey,
-        counter: credential.counter
+        credentialPublicKey: credential.credentialPublicKey,
+        counter: credential.counter,
+        transports: ['internal', 'hybrid']
       },
       requireUserVerification: true
     });
