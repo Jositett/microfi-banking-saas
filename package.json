@@ -13,7 +13,7 @@
     "format:check": "prettier --check .",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run"
+    "test:run": "vitest run tests"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

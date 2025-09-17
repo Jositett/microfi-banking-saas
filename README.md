@@ -183,7 +183,7 @@ npm run test:webauthn
 ## 🚀 **Deployment**
 
 ### **Production Deployment**
-See [DEPLOYMENT-GUIDE.md](./DEPLOYMENT-GUIDE.md) for detailed instructions.
+See [DEPLOYMENT-GUIDE.md](./docs/DEPLOYMENT-GUIDE.md) for detailed instructions.
 
 ```bash
 # Backend deployment
@@ -205,10 +205,11 @@ wrangler secret put PAYSTACK_SECRET_KEY
 
 ## 📚 **Documentation**
 
-- [Security Architecture](./SECURITY-ARCHITECTURE-PLAN.md)
+- [Security Architecture](./docs/SECURITY-ARCHITECTURE-PLAN.md)
 - [Development Rules](./.amazonq/rules/dev-rules.md)
-- [Deployment Guide](./DEPLOYMENT-GUIDE.md)
-- [Security Incident Response](./SECURITY-INCIDENT-RESPONSE.md)
+- [Deployment Guide](./docs/DEPLOYMENT-GUIDE.md)
+- [Security Incident Response](./docs/SECURITY-INCIDENT-RESPONSE.md)
+- [WebAuthn Error Report](./docs/WEBAUTHN-ERROR-REPORT.md)
 
 ## 🤝 **Contributing**
 
