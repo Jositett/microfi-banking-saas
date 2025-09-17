@@ -99,9 +99,22 @@ export class WebAuthnService {
       throw new Error('Authentication challenge not found or expired');
     }
 
-    const credentialID = response.id;
-    const credentialKey = `${userId}_${credentialID}`;
-    const storedCredential = await this.env.WEBAUTHN_CREDENTIALS.get(credentialKey);
+    // Find credential by searching all user credentials
+    const list = await this.env.WEBAUTHN_CREDENTIALS.list({ prefix: `${userId}_` });
+    let storedCredential = null;
+    let credentialKey = '';
+    
+    for (const key of list.keys) {
+      const cred = await this.env.WEBAUTHN_CREDENTIALS.get(key.name);
+      if (cred) {
+        const parsed = JSON.parse(cred);
+        if (parsed.credentialID && btoa(String.fromCharCode(...new Uint8Array(parsed.credentialID))) === response.id) {
+          storedCredential = cred;
+          credentialKey = key.name;
+          break;
+        }
+      }
+    }
     
     if (!storedCredential) {
       throw new Error('Credential not found');
