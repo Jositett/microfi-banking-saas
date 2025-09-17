@@ -20,6 +20,7 @@ const registerSchema = z.object({
 // Login endpoint
 authRouter.post('/login', zValidator('json', loginSchema), async (c) => {
   const { email, password } = c.req.valid('json');
+  console.log('Login attempt for:', email);
   
   try {
     // Find user by email
@@ -30,26 +31,25 @@ authRouter.post('/login', zValidator('json', loginSchema), async (c) => {
     `).bind(email).first();
     
     if (!user) {
+      console.log('User not found:', email);
       return c.json({ error: 'Invalid credentials' }, 401);
     }
+    
+    console.log('User found:', { id: user.id, email: user.email, role: user.role });
     
     // Verify password (simplified for demo)
     const isValidPassword = password === user.password_hash;
     if (!isValidPassword) {
+      console.log('Password mismatch for:', email);
       return c.json({ error: 'Invalid credentials' }, 401);
     }
     
-    // Generate JWT token
-    const token = await generateJWT(
-      { 
-        userId: user.id, 
-        email: user.email, 
-        role: user.role 
-      },
-      c.env.JWT_SECRET
-    );
+    console.log('Password verified for:', email);
     
-    return c.json({
+    // Generate simple token for demo
+    const token = `demo_token_${user.id}_${Date.now()}`;
+    
+    const response = {
       user: {
         id: user.id,
         email: user.email,
@@ -58,7 +58,10 @@ authRouter.post('/login', zValidator('json', loginSchema), async (c) => {
       },
       token,
       expiresIn: 86400 // 24 hours in seconds
-    });
+    };
+    
+    console.log('Login successful, returning:', response);
+    return c.json(response);
     
   } catch (error) {
     console.error('Login error:', error);
@@ -90,11 +93,8 @@ authRouter.post('/register', zValidator('json', registerSchema), async (c) => {
       VALUES (?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP)
     `).bind(userId, email, passwordHash, role).run();
     
-    // Generate JWT token
-    const token = await generateJWT(
-      { userId, email, role },
-      c.env.JWT_SECRET
-    );
+    // Generate simple token for demo
+    const token = `demo_token_${userId}_${Date.now()}`;
     
     return c.json({
       user: {

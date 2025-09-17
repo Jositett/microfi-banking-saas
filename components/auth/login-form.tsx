@@ -66,11 +66,12 @@ export function LoginForm() {
       
       // Backend returns user and token directly
       if (data.user && data.token) {
+        console.log('Backend login successful, redirecting...')
         // Store user data in localStorage
         localStorage.setItem("microfi_user", JSON.stringify(data.user))
         localStorage.setItem("auth_token", data.token)
 
-        // Redirect based on user role
+        // Redirect based on user role - don't set loading to false
         if (data.user.role === "admin") {
           window.location.href = "/admin"
         } else {
@@ -79,6 +80,7 @@ export function LoginForm() {
         return // Exit early on success
       } else {
         console.error('Invalid backend response format:', data)
+        setIsLoading(false)
       }
     } catch (error) {
       console.error("Backend login failed, trying demo:", error)
@@ -94,8 +96,10 @@ export function LoginForm() {
         })
 
         const data = await response.json()
+        console.log('Demo API response:', data)
 
         if (data.success) {
+          console.log('Demo login successful, redirecting...')
           localStorage.setItem("microfi_user", JSON.stringify(data.user))
           localStorage.setItem("auth_token", data.token)
 
@@ -104,15 +108,16 @@ export function LoginForm() {
           } else {
             window.location.href = "/dashboard"
           }
+          return // Exit early on success
         } else {
           alert("Invalid credentials. Please try a demo account.")
+          setIsLoading(false)
         }
       } catch (demoError) {
         console.error("Demo login also failed:", demoError)
         alert("Login failed. Please check if the backend is running.")
+        setIsLoading(false)
       }
-    } finally {
-      setIsLoading(false)
     }
   }
 
