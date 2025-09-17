@@ -69,15 +69,22 @@ export class WebAuthnService {
       console.log('Using credential ID from response:', credentialIDBase64);
       console.log('Credential ID length:', credentialIDBase64.length);
       
+      // Convert public key to base64url string for storage
+      const publicKeyBuffer = verification.registrationInfo.credentialPublicKey;
+      const publicKeyBase64 = btoa(String.fromCharCode(...publicKeyBuffer))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=/g, '');
+      
       await this.env.WEBAUTHN_CREDENTIALS.put(
         `${userId}_${credentialIDBase64}`,
         JSON.stringify({
-          credentialID: credential.credentialID,
-          credentialPublicKey: credential.publicKey,
-          counter: credential.counter,
-          deviceType: credential.deviceType,
-          backedUp: credential.backedUp,
-          createdAt: credential.createdAt,
+          credentialID: verification.registrationInfo.credentialID,
+          credentialPublicKey: publicKeyBase64,
+          counter: verification.registrationInfo.counter || 0,
+          deviceType: verification.registrationInfo.credentialDeviceType,
+          backedUp: verification.registrationInfo.credentialBackedUp,
+          createdAt: new Date().toISOString(),
           credentialIDBase64
         })
       );
@@ -157,14 +164,22 @@ export class WebAuthnService {
       throw new Error(`Invalid counter type: ${typeof credential.counter}. Expected number.`);
     }
     
+    // Convert base64url string back to Uint8Array
+    const publicKeyBase64 = credential.credentialPublicKey;
+    const base64 = publicKeyBase64
+      .replace(/-/g, '+')
+      .replace(/_/g, '/')
+      .padEnd(publicKeyBase64.length + (4 - (publicKeyBase64.length % 4)) % 4, '=');
+    const publicKeyBuffer = new Uint8Array(atob(base64).split('').map(c => c.charCodeAt(0)));
+    
     const verification = await verifyAuthenticationResponse({
       response,
       expectedChallenge: challenge,
       expectedOrigin: this.env.WEBAUTHN_ORIGIN,
       expectedRPID: this.env.WEBAUTHN_RP_ID,
-      authenticator: {
+      credential: {
         credentialID: credential.credentialID,
-        credentialPublicKey: credential.credentialPublicKey,
+        credentialPublicKey: publicKeyBuffer,
         counter: credential.counter
       },
       requireUserVerification: true
