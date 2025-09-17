@@ -415,3 +415,64 @@
     - Implement connection pooling for high-traffic scenarios
     - Cache WebAuthn credentials in KV for sub-100ms authentication
     - Use edge-optimized KV for global MFA verification
+
+## Backend-Frontend Integration Rules
+
+37. **Authentication Flow Standards**
+    - **Dual Token Storage**: Always store auth tokens in both localStorage AND cookies
+    - **Response Type Consistency**: Backend and frontend must use identical response interfaces
+    - **Proper Redirects**: Use `window.location.href` for post-authentication redirects, not router.push
+    - **Client-Side Auth Checks**: Always verify authentication in useEffect before loading protected content
+
+38. **API Response Standards**
+    - **Consistent Error Format**: All API errors must follow standard format
+    - **Success Response Format**: All successful responses must include expected data structure
+    - **TypeScript Interfaces**: Define shared interfaces between frontend and backend
+    - **Status Code Standards**: Use proper HTTP status codes (200, 401, 404, 500)
+
+39. **Middleware Configuration Rules**
+    - **Demo Mode Support**: Authentication middleware must support both JWT and demo tokens
+    - **Flexible Auth Checks**: Middleware should check cookies first, then Authorization header
+    - **Graceful Degradation**: Disable strict MFA requirements in demo/development mode
+    - **Route Protection**: Protect `/api/*` routes but allow `/auth/*` and `/health` endpoints
+
+40. **Database Integration Standards**
+    - **Demo Data Seeding**: Always provide working demo data with simple passwords
+    - **Migration Scripts**: Use separate files for schema and demo data
+    - **Password Updates**: Provide update scripts to change demo passwords for testing
+    - **Data Consistency**: Ensure demo data matches frontend expectations
+
+41. **Development Workflow Rules**
+    - **Backend First**: Always start backend server before frontend during development
+    - **Port Consistency**: Backend on 8787, Frontend on 3000 (document in README)
+    - **Environment Sync**: Keep .env.example files updated with required variables
+    - **API Testing**: Test all endpoints with curl before frontend integration
+
+42. **Error Prevention Checklist**
+    - **Before Login Implementation**: Verify backend returns expected response format
+    - **Before Frontend Integration**: Define TypeScript interfaces for all API responses
+    - **Before Production**: Replace demo tokens with proper JWT implementation
+
+43. **Debugging Standards**
+    - **Console Logging**: Use structured logging for authentication flows
+    - **Error Context**: Always log full error context including request/response data
+    - **Network Debugging**: Use browser dev tools to verify API calls and responses
+    - **Token Verification**: Log token storage and retrieval for debugging auth issues
+
+44. **Integration Testing Rules**
+    - **End-to-End Flow**: Test complete login → dashboard → API call → logout flow
+    - **Role-Based Testing**: Verify admin and user roles redirect correctly
+    - **Error Scenarios**: Test invalid credentials, network failures, and server errors
+    - **Cross-Browser**: Test authentication on Chrome, Firefox, Safari, Edge
+
+45. **Documentation Requirements**
+    - **API Documentation**: Document all endpoints with request/response examples
+    - **Setup Instructions**: Provide exact commands for backend and frontend setup
+    - **Demo Credentials**: Always document demo account credentials in README
+    - **Troubleshooting**: Include common issues and solutions in documentation
+
+46. **Security Transition Rules**
+    - **Demo to Production**: Clear migration path from demo tokens to JWT + WebAuthn
+    - **Middleware Flags**: Use environment variables to enable/disable security features
+    - **Audit Trail**: Log all authentication events even in demo mode
+    - **Token Expiration**: Implement proper token expiration even for demo tokens
