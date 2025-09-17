@@ -32,10 +32,16 @@ export function LoginForm() {
     const loadDemoAccounts = async () => {
       try {
         const response = await fetch("/api/demo-accounts")
-        const data = await response.json()
-        setDemoAccounts(data.accounts)
+        if (response.ok) {
+          const text = await response.text()
+          if (text) {
+            const data = JSON.parse(text)
+            setDemoAccounts(data.accounts || [])
+          }
+        }
       } catch (error) {
         console.error("Failed to load demo accounts:", error)
+        setDemoAccounts([])
       }
     }
     loadDemoAccounts()
@@ -118,7 +124,16 @@ export function LoginForm() {
           body: JSON.stringify({ email, password }),
         })
 
-        const data = await response.json()
+        if (!response.ok) {
+          throw new Error(`Demo API error: ${response.status}`)
+        }
+        
+        const text = await response.text()
+        if (!text) {
+          throw new Error('Empty response from demo API')
+        }
+        
+        const data = JSON.parse(text)
         console.log('Demo API response:', data)
 
         if (data.success) {

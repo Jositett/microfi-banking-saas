@@ -151,7 +151,7 @@ export class WebAuthnService {
       authenticator: {
         credentialID: credential.credentialID,
         credentialPublicKey: credential.publicKey,
-        counter: credential.counter
+        counter: credential.counter || 0
       },
       requireUserVerification: true
     });
@@ -166,7 +166,7 @@ export class WebAuthnService {
         mfaVerified: true,
         lastActivity: Date.now(),
         expiresAt: Date.now() + 3600000,
-        credentialUsed: credentialID
+        credentialUsed: response.id
       };
 
       await this.env.USER_SESSIONS.put(sessionToken, JSON.stringify(session), {
@@ -176,7 +176,7 @@ export class WebAuthnService {
       await this.env.USER_SESSIONS.delete(`auth_challenge_${userId}`);
 
       await this.logSecurityEvent(userId, 'webauthn_authentication', {
-        credentialID,
+        credentialID: response.id,
         sessionToken: sessionToken.substring(0, 8) + '...'
       });
 
