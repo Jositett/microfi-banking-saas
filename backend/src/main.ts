@@ -13,6 +13,10 @@ import { paymentsRouter } from './routes/payments';
 import { savingsRouter } from './routes/savings';
 import { loansRouter } from './routes/loans';
 
+// Import security middleware
+import { securityHeaders, rateLimiting, mfaVerification } from './middleware/security';
+import { transactionMFA } from './middleware/transaction-mfa';
+
 export interface Env {
   DB: D1Database;
   JWT_SECRET: string;
@@ -35,18 +39,13 @@ app.use('*', logger());
 app.use('*', cors({
   origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://169.254.146.124:3000', 'https://your-frontend-domain.com'],
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization'],
+  allowHeaders: ['Content-Type', 'Authorization', 'X-MFA-Challenge', 'X-MFA-Response'],
   credentials: true,
 }));
 
-// Security headers
-app.use('*', async (c, next) => {
-  c.header('Content-Security-Policy', "default-src 'self'");
-  c.header('X-Frame-Options', 'DENY');
-  c.header('X-Content-Type-Options', 'nosniff');
-  c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
-  await next();
-});
+// Banking-grade security middleware
+app.use('*', securityHeaders);
+app.use('*', rateLimiting);
 
 // Health check
 app.get('/health', (c) => {
@@ -58,7 +57,8 @@ app.route('/auth', authRouter);
 app.route('/webauthn', webauthnRouter);
 
 // Protected routes (auth required)
-app.use('/api/*', authMiddleware);
+app.use('/api/*', mfaVerification);
+app.use('/api/*', transactionMFA);
 app.use('/api/*', auditMiddleware);
 
 app.route('/api/accounts', accountsRouter);
