@@ -165,8 +165,7 @@ export class WebAuthnService {
       authenticator: {
         credentialID: credential.credentialID,
         credentialPublicKey: credential.credentialPublicKey,
-        counter: credential.counter,
-        transports: ['internal', 'hybrid']
+        counter: credential.counter
       },
       requireUserVerification: true
     });
