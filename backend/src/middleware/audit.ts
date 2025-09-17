@@ -2,7 +2,7 @@ import { Context, Next } from 'hono';
 import type { Env } from '../main';
 import type { JWTPayload } from './auth';
 
-export const auditMiddleware = async (c: Context<{ Bindings: Env; Variables: { user: JWTPayload } }>, next: Next) => {
+export const auditMiddleware = async (c: Context<{ Bindings: Env }>, next: Next) => {
   await next();
   
   const user = c.get('user');
@@ -15,17 +15,16 @@ export const auditMiddleware = async (c: Context<{ Bindings: Env; Variables: { u
   // Only log sensitive operations
   if (method !== 'GET' && (path.includes('/payments') || path.includes('/accounts') || path.includes('/loans'))) {
     try {
-      const logId = crypto.randomUUID();
-      await c.env.DB.prepare(`
-        INSERT INTO audit_logs (id, user_id, action, resource_type, details, timestamp)
-        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      `).bind(
-        logId,
-        user.userId,
-        `${method} ${path}`,
-        path.split('/')[2] || 'unknown',
-        JSON.stringify({ status, timestamp: new Date().toISOString() })
-      ).run();
+      const logId = `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      await c.env.AUDIT_LOGS.put(logId, JSON.stringify({
+        userId: user.id,
+        action: `${method} ${path}`,
+        resourceType: path.split('/')[2] || 'unknown',
+        status,
+        timestamp: new Date().toISOString()
+      }), {
+        expirationTtl: 2592000 // 30 days
+      });
     } catch (error) {
       console.error('Audit logging failed:', error);
     }

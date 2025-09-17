@@ -40,7 +40,7 @@ export const authMiddleware = async (c: HonoContext, next: Next) => {
         
         // Fetch user from database
         const dbUser = await c.env.DB.prepare(
-          'SELECT id, email, role, first_name, last_name FROM users WHERE id = ?'
+          'SELECT id, email, role FROM users WHERE id = ?'
         ).bind(userId).first();
         
         if (!dbUser) {
@@ -50,9 +50,7 @@ export const authMiddleware = async (c: HonoContext, next: Next) => {
         user = {
           id: dbUser.id as string,
           email: dbUser.email as string,
-          role: dbUser.role as 'user' | 'admin',
-          firstName: dbUser.first_name as string,
-          lastName: dbUser.last_name as string
+          role: dbUser.role as 'user' | 'admin'
         };
       } else {
         return c.json({ error: 'Invalid demo token format' }, 401);
@@ -63,7 +61,7 @@ export const authMiddleware = async (c: HonoContext, next: Next) => {
       
       // Fetch fresh user data from database
       const dbUser = await c.env.DB.prepare(
-        'SELECT id, email, role, first_name, last_name FROM users WHERE id = ?'
+        'SELECT id, email, role FROM users WHERE id = ?'
       ).bind(payload.userId).first();
       
       if (!dbUser) {
@@ -73,9 +71,7 @@ export const authMiddleware = async (c: HonoContext, next: Next) => {
       user = {
         id: dbUser.id as string,
         email: dbUser.email as string,
-        role: dbUser.role as 'user' | 'admin',
-        firstName: dbUser.first_name as string,
-        lastName: dbUser.last_name as string
+        role: dbUser.role as 'user' | 'admin'
       };
     }
     

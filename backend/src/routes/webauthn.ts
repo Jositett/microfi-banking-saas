@@ -2,9 +2,14 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { WebAuthnService } from '../services/webauthn';
+import { authMiddleware } from '../middleware/auth';
 import type { Env } from '../main';
 
 const webauthnRouter = new Hono<{ Bindings: Env }>();
+
+// Apply auth middleware to registration and authentication routes
+webauthnRouter.use('/register/*', authMiddleware);
+webauthnRouter.use('/authenticate/*', authMiddleware);
 
 const registrationSchema = z.object({
   userId: z.string(),
@@ -17,12 +22,15 @@ const verificationSchema = z.object({
 });
 
 // WebAuthn Registration - Generate Options
-webauthnRouter.post('/register/begin', zValidator('json', registrationSchema), async (c) => {
-  const { userId, userEmail } = c.req.valid('json');
-  
+webauthnRouter.post('/register/begin', async (c) => {
   try {
+    const user = c.get('user');
+    if (!user) {
+      return c.json({ error: 'Authentication required' }, 401);
+    }
+    
     const webauthnService = new WebAuthnService(c.env);
-    const options = await webauthnService.generateRegistrationOptions(userId, userEmail);
+    const options = await webauthnService.generateRegistrationOptions(user.id, user.email);
     
     return c.json(options);
   } catch (error) {

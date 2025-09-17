@@ -32,6 +32,8 @@ export interface Env {
   AUDIT_LOGS: KVNamespace;
   PAYSTACK_SECRET_KEY: string;
   FLUTTERWAVE_SECRET_KEY: string;
+  FLUTTERWAVE_CLIENT_ID: string;
+  FLUTTERWAVE_ENCRYPTION_KEY: string;
   TWILIO_AUTH_TOKEN: string;
   SENDGRID_API_KEY: string;
   ENVIRONMENT?: string;
