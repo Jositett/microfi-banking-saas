@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { AuditService, AuditEvents } from '../services/audit';
+import { PaystackService } from '../services/paystack';
 import type { Env } from '../main';
 
 const paymentsRouter = new Hono<{ Bindings: Env }>();
@@ -152,6 +153,97 @@ paymentsRouter.get('/transactions', async (c) => {
   } catch (error) {
     console.error('Get transactions error:', error);
     return c.json({ error: 'Failed to retrieve transactions' }, 500);
+  }
+});
+
+// Paystack payment initialization
+paymentsRouter.post('/paystack/initialize', async (c) => {
+  try {
+    const user = c.get('user');
+    if (!user) return c.json({ error: 'User not found' }, 401);
+    
+    const { amount, email, reference } = await c.req.json();
+    
+    if (!amount || amount <= 0) {
+      return c.json({ error: 'Invalid amount' }, 400);
+    }
+    
+    const paystackService = new PaystackService(c.env);
+    const result = await paystackService.initializePayment(
+      amount, 
+      email || user.email, 
+      user.id, 
+      reference
+    );
+    
+    return c.json({
+      success: true,
+      data: result.data
+    });
+  } catch (error) {
+    console.error('Paystack initialization error:', error);
+    return c.json({ error: 'Payment initialization failed' }, 500);
+  }
+});
+
+// Paystack payment verification
+paymentsRouter.post('/paystack/verify', async (c) => {
+  try {
+    const user = c.get('user');
+    if (!user) return c.json({ error: 'User not found' }, 401);
+    
+    const { reference } = await c.req.json();
+    
+    if (!reference) {
+      return c.json({ error: 'Payment reference required' }, 400);
+    }
+    
+    const paystackService = new PaystackService(c.env);
+    const result = await paystackService.verifyPayment(reference);
+    
+    if (result.data.status === 'success') {
+      const amount = result.data.amount / 100;
+      
+      await c.env.DB.prepare('BEGIN TRANSACTION').run();
+      
+      try {
+        await c.env.DB.prepare(
+          'UPDATE accounts SET balance = balance + ? WHERE user_id = ? AND type = "savings"'
+        ).bind(amount * 100, user.id).run();
+        
+        await c.env.DB.prepare(
+          'INSERT INTO transactions (id, user_id, type, amount, description, reference, status, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)'
+        ).bind(
+          crypto.randomUUID(),
+          user.id,
+          'deposit',
+          amount * 100,
+          'Paystack deposit',
+          reference,
+          'completed'
+        ).run();
+        
+        await c.env.DB.prepare('COMMIT').run();
+        
+        return c.json({
+          success: true,
+          message: 'Payment verified and account credited',
+          amount
+        });
+      } catch (dbError) {
+        await c.env.DB.prepare('ROLLBACK').run();
+        throw dbError;
+      }
+    } else {
+      return c.json({
+        success: false,
+        message: 'Payment verification failed',
+        status: result.data.status
+      });
+    }
+  } catch (error) {
+    console.error('Paystack verification error:', error);
+    return c.json({ error: 'Payment verification failed' }, 500);
   }
 });
 

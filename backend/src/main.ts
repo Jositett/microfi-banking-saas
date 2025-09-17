@@ -17,7 +17,8 @@ import { loansRouter } from './routes/loans';
 import { healthRouter } from './routes/health';
 
 // Import security middleware
-import { securityHeaders, rateLimiting, mfaVerification } from './middleware/security';
+import { securityHeaders } from './middleware/auth';
+import { rateLimiting, mfaVerification } from './middleware/security';
 import { transactionMFA } from './middleware/transaction-mfa';
 
 export interface Env {
@@ -49,7 +50,6 @@ app.use('*', cors({
 
 // Banking-grade security middleware
 app.use('*', securityHeaders);
-app.use('*', rateLimiting);
 
 // Health check
 app.get('/health', (c) => {

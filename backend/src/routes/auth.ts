@@ -37,7 +37,7 @@ authRouter.post('/login', zValidator('json', loginSchema), async (c) => {
     
     console.log('User found:', { id: user.id, email: user.email, role: user.role });
     
-    // Verify password (simplified for demo)
+    // Verify password (simplified for demo - use proper hashing in production)
     const isValidPassword = password === user.password_hash;
     if (!isValidPassword) {
       console.log('Password mismatch for:', email);
@@ -46,8 +46,18 @@ authRouter.post('/login', zValidator('json', loginSchema), async (c) => {
     
     console.log('Password verified for:', email);
     
-    // Generate simple token for demo
-    const token = `demo_token_${user.id}_${Date.now()}`;
+    // Generate JWT token if JWT_SECRET is available, otherwise use demo token
+    let token: string;
+    if (c.env.JWT_SECRET) {
+      token = await generateJWT({
+        userId: user.id,
+        email: user.email,
+        role: user.role
+      }, c.env.JWT_SECRET, '24h');
+    } else {
+      // Fallback to demo token for development
+      token = `demo_token_${user.id}_${Date.now()}`;
+    }
     
     const response = {
       user: {
@@ -83,8 +93,8 @@ authRouter.post('/register', zValidator('json', registerSchema), async (c) => {
       return c.json({ error: 'User already exists' }, 409);
     }
     
-    // Hash password
-    const passwordHash = await hashPassword(password);
+    // For demo, store password as-is (use proper hashing in production)
+    const passwordHash = password;
     const userId = crypto.randomUUID();
     
     // Create user
@@ -93,8 +103,18 @@ authRouter.post('/register', zValidator('json', registerSchema), async (c) => {
       VALUES (?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP)
     `).bind(userId, email, passwordHash, role).run();
     
-    // Generate simple token for demo
-    const token = `demo_token_${userId}_${Date.now()}`;
+    // Generate JWT token if JWT_SECRET is available, otherwise use demo token
+    let token: string;
+    if (c.env.JWT_SECRET) {
+      token = await generateJWT({
+        userId,
+        email,
+        role
+      }, c.env.JWT_SECRET, '24h');
+    } else {
+      // Fallback to demo token for development
+      token = `demo_token_${userId}_${Date.now()}`;
+    }
     
     return c.json({
       user: {

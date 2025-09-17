@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Icons } from "@/components/ui/icons"
 import { SecureTransfer } from "@/components/dashboard/secure-transfer"
+import { PaystackPayment } from "@/components/payments/paystack-payment"
 import { secureApi } from "@/lib/secure-api"
 
 interface Account {
@@ -185,6 +186,29 @@ export default function DashboardPage() {
           accounts={accounts} 
           onTransferComplete={loadDashboardData}
         />
+
+        {/* Payment Integration */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <div className="h-5 w-5">
+                <Icons.CreditCard />
+              </div>
+              Payment Integration
+            </CardTitle>
+            <CardDescription>
+              Test Paystack payment integration
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PaystackPayment 
+              onSuccess={(reference, amount) => {
+                // Refresh account data after successful payment
+                loadDashboardData();
+              }}
+            />
+          </CardContent>
+        </Card>
 
         {/* Recent Transactions */}
         <Card>
