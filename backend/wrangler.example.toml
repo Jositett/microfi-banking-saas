@@ -1,0 +1,36 @@
+name = "microfi-banking-backend"
+main = "src/main.ts"
+compatibility_date = "2024-01-01"
+account_id = "YOUR_CLOUDFLARE_ACCOUNT_ID"
+
+[env.development]
+vars = { ENVIRONMENT = "development" }
+
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+# D1 Database Configuration
+[[d1_databases]]
+binding = "DB"
+database_name = "microfi-banking"
+database_id = "YOUR_D1_DATABASE_ID"
+
+# KV Namespaces for WebAuthn and Security
+[[kv_namespaces]]
+binding = "WEBAUTHN_CREDENTIALS"
+id = "YOUR_WEBAUTHN_KV_ID"
+
+[[kv_namespaces]]
+binding = "USER_SESSIONS"
+id = "YOUR_SESSIONS_KV_ID"
+
+[[kv_namespaces]]
+binding = "AUDIT_LOGS"
+id = "YOUR_AUDIT_KV_ID"
+
+# Environment Variables (Use .dev.vars for local development)
+[vars]
+JWT_SECRET = "your-jwt-secret-here"
+WEBAUTHN_RP_ID = "localhost"
+WEBAUTHN_ORIGIN = "http://localhost:3000"
+WEBAUTHN_RP_NAME = "MicroFi Banking SaaS"
