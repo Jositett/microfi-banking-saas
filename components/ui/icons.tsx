@@ -59,11 +59,4 @@ export const Icons = {
   eyeOff: EyeOff,
   shield: Shield,
   fingerprint: Fingerprint,
-  Loader2,
-  Check,
-  User,
-  Eye,
-  EyeOff,
-  Shield,
-  Fingerprint,
 }
