@@ -8,9 +8,10 @@ import Link from "next/link"
 
 const navigation = [
   { name: "Dashboard", href: "/admin" as const, icon: Icons.Home },
+  { name: "Tenants", href: "/admin/tenants" as const, icon: Icons.Users },
+  { name: "Analytics", href: "/admin/analytics" as const, icon: Icons.BarChart3 },
+  { name: "Subscriptions", href: "/admin/subscriptions" as const, icon: Icons.CreditCard },
   { name: "Users", href: "/admin/users" as const, icon: Icons.Users },
-  { name: "Accounts", href: "/admin/accounts" as const, icon: Icons.CreditCard },
-  { name: "Transactions", href: "/admin/transactions" as const, icon: Icons.FileText },
   { name: "Reports", href: "/admin/reports" as const, icon: Icons.BarChart3 },
   { name: "System Logs", href: "/admin/logs" as const, icon: Icons.Database },
   { name: "Alerts", href: "/admin/alerts" as const, icon: Icons.AlertTriangle },

@@ -1,76 +1,260 @@
 import { Hono } from 'hono';
-import type { Env } from '../main';
+import type { Context } from 'hono';
 
-const healthRouter = new Hono<{ Bindings: Env }>();
+interface HealthCheck {
+  healthy: boolean;
+  responseTime: number;
+  error?: string;
+  details?: any;
+}
 
-// Health check endpoint
-healthRouter.get('/', async (c) => {
-  const startTime = Date.now();
-  
-  try {
-    // Test database connectivity
-    const dbTest = await c.env.DB.prepare('SELECT 1 as test').first();
-    
-    // Test KV connectivity
-    const kvTest = await c.env.USER_SESSIONS.get('health-check');
-    await c.env.USER_SESSIONS.put('health-check', 'ok', { expirationTtl: 60 });
-    
-    const responseTime = Date.now() - startTime;
-    
-    return c.json({
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      version: '1.0.0',
-      environment: c.env.ENVIRONMENT || 'development',
-      services: {
-        database: dbTest ? 'connected' : 'error',
-        kv_storage: 'connected',
-        webauthn: 'ready'
-      },
-      performance: {
-        responseTime: `${responseTime}ms`,
-        uptime: process.uptime ? `${Math.floor(process.uptime())}s` : 'N/A'
-      },
-      security: {
-        mfa_enabled: true,
-        audit_logging: true,
-        rate_limiting: true
-      }
-    });
-  } catch (error) {
-    return c.json({
-      status: 'unhealthy',
-      timestamp: new Date().toISOString(),
-      error: 'Service connectivity issues',
-      environment: c.env.ENVIRONMENT || 'development'
-    }, 503);
-  }
-});
+interface HealthStatus {
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  timestamp: string;
+  uptime: number;
+  checks: {
+    database: HealthCheck;
+    paystack: HealthCheck;
+    flutterwave: HealthCheck;
+    hubtel: HealthCheck;
+    resend: HealthCheck;
+    kv: HealthCheck;
+  };
+  performance: {
+    avgResponseTime: number;
+    requestCount: number;
+    errorRate: number;
+  };
+}
 
-// Readiness probe
-healthRouter.get('/ready', async (c) => {
-  try {
-    // Check critical services
-    await c.env.DB.prepare('SELECT COUNT(*) as count FROM users').first();
-    
-    return c.json({
-      status: 'ready',
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    return c.json({
-      status: 'not ready',
-      error: 'Database not accessible'
-    }, 503);
-  }
-});
+const healthRouter = new Hono();
 
-// Liveness probe
-healthRouter.get('/live', (c) => {
+// Simple health check
+healthRouter.get('/', async (c: Context) => {
   return c.json({
-    status: 'alive',
-    timestamp: new Date().toISOString()
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'MicroFi Banking API'
   });
 });
+
+// Comprehensive health check
+healthRouter.get('/detailed', async (c: Context) => {
+  const startTime = Date.now();
+  
+  const checks = await Promise.allSettled([
+    checkDatabaseHealth(c.env.DB),
+    checkPaystackHealth(c.env.PAYSTACK_SECRET_KEY),
+    checkFlutterwaveHealth(c.env.FLUTTERWAVE_SECRET_KEY),
+    checkHubtelHealth(c.env.HUBTEL_CLIENT_ID, c.env.HUBTEL_CLIENT_SECRET),
+    checkResendHealth(c.env.RESEND_API_KEY),
+    checkKVHealth(c.env.USER_SESSIONS)
+  ]);
+
+  const healthStatus: HealthStatus = {
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: Date.now() - startTime,
+    checks: {
+      database: checks[0].status === 'fulfilled' ? checks[0].value : { healthy: false, responseTime: 0, error: 'Check failed' },
+      paystack: checks[1].status === 'fulfilled' ? checks[1].value : { healthy: false, responseTime: 0, error: 'Check failed' },
+      flutterwave: checks[2].status === 'fulfilled' ? checks[2].value : { healthy: false, responseTime: 0, error: 'Check failed' },
+      hubtel: checks[3].status === 'fulfilled' ? checks[3].value : { healthy: false, responseTime: 0, error: 'Check failed' },
+      resend: checks[4].status === 'fulfilled' ? checks[4].value : { healthy: false, responseTime: 0, error: 'Check failed' },
+      kv: checks[5].status === 'fulfilled' ? checks[5].value : { healthy: false, responseTime: 0, error: 'Check failed' }
+    },
+    performance: {
+      avgResponseTime: Date.now() - startTime,
+      requestCount: 0, // Would be tracked in production
+      errorRate: 0 // Would be calculated from metrics
+    }
+  };
+
+  // Determine overall status
+  const unhealthyServices = Object.values(healthStatus.checks).filter(check => !check.healthy);
+  if (unhealthyServices.length === 0) {
+    healthStatus.status = 'healthy';
+  } else if (unhealthyServices.length <= 2) {
+    healthStatus.status = 'degraded';
+  } else {
+    healthStatus.status = 'unhealthy';
+  }
+
+  const statusCode = healthStatus.status === 'healthy' ? 200 : 
+                    healthStatus.status === 'degraded' ? 206 : 503;
+
+  return c.json(healthStatus, statusCode);
+});
+
+// Individual service health checks
+async function checkDatabaseHealth(db: D1Database): Promise<HealthCheck> {
+  const start = Date.now();
+  try {
+    const result = await db.prepare('SELECT 1 as test').first();
+    return {
+      healthy: result?.test === 1,
+      responseTime: Date.now() - start,
+      details: { connected: true }
+    };
+  } catch (error) {
+    return {
+      healthy: false,
+      responseTime: Date.now() - start,
+      error: error instanceof Error ? error.message : 'Database connection failed'
+    };
+  }
+}
+
+async function checkPaystackHealth(secretKey?: string): Promise<HealthCheck> {
+  const start = Date.now();
+  if (!secretKey) {
+    return {
+      healthy: false,
+      responseTime: 0,
+      error: 'Paystack secret key not configured'
+    };
+  }
+
+  try {
+    const response = await fetch('https://api.paystack.co/bank', {
+      headers: {
+        'Authorization': `Bearer ${secretKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return {
+      healthy: response.ok,
+      responseTime: Date.now() - start,
+      details: { status: response.status }
+    };
+  } catch (error) {
+    return {
+      healthy: false,
+      responseTime: Date.now() - start,
+      error: error instanceof Error ? error.message : 'Paystack API unreachable'
+    };
+  }
+}
+
+async function checkFlutterwaveHealth(secretKey?: string): Promise<HealthCheck> {
+  const start = Date.now();
+  if (!secretKey) {
+    return {
+      healthy: false,
+      responseTime: 0,
+      error: 'Flutterwave secret key not configured'
+    };
+  }
+
+  try {
+    const response = await fetch('https://api.flutterwave.com/v3/banks/NG', {
+      headers: {
+        'Authorization': `Bearer ${secretKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return {
+      healthy: response.ok,
+      responseTime: Date.now() - start,
+      details: { status: response.status }
+    };
+  } catch (error) {
+    return {
+      healthy: false,
+      responseTime: Date.now() - start,
+      error: error instanceof Error ? error.message : 'Flutterwave API unreachable'
+    };
+  }
+}
+
+async function checkHubtelHealth(clientId?: string, clientSecret?: string): Promise<HealthCheck> {
+  const start = Date.now();
+  if (!clientId || !clientSecret) {
+    return {
+      healthy: false,
+      responseTime: 0,
+      error: 'Hubtel credentials not configured'
+    };
+  }
+
+  try {
+    // Check account balance endpoint
+    const auth = btoa(`${clientId}:${clientSecret}`);
+    const response = await fetch('https://smpp.hubtel.com/v1/messages/balance', {
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return {
+      healthy: response.ok,
+      responseTime: Date.now() - start,
+      details: { status: response.status }
+    };
+  } catch (error) {
+    return {
+      healthy: false,
+      responseTime: Date.now() - start,
+      error: error instanceof Error ? error.message : 'Hubtel API unreachable'
+    };
+  }
+}
+
+async function checkResendHealth(apiKey?: string): Promise<HealthCheck> {
+  const start = Date.now();
+  if (!apiKey) {
+    return {
+      healthy: false,
+      responseTime: 0,
+      error: 'Resend API key not configured'
+    };
+  }
+
+  try {
+    const response = await fetch('https://api.resend.com/domains', {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return {
+      healthy: response.ok,
+      responseTime: Date.now() - start,
+      details: { status: response.status }
+    };
+  } catch (error) {
+    return {
+      healthy: false,
+      responseTime: Date.now() - start,
+      error: error instanceof Error ? error.message : 'Resend API unreachable'
+    };
+  }
+}
+
+async function checkKVHealth(kv: KVNamespace): Promise<HealthCheck> {
+  const start = Date.now();
+  try {
+    const testKey = `health_check_${Date.now()}`;
+    await kv.put(testKey, 'test', { expirationTtl: 60 });
+    const result = await kv.get(testKey);
+    await kv.delete(testKey);
+
+    return {
+      healthy: result === 'test',
+      responseTime: Date.now() - start,
+      details: { kvOperational: true }
+    };
+  } catch (error) {
+    return {
+      healthy: false,
+      responseTime: Date.now() - start,
+      error: error instanceof Error ? error.message : 'KV storage failed'
+    };
+  }
+}
 
 export { healthRouter };

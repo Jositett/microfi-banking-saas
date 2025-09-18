@@ -133,4 +133,39 @@ authRouter.post('/register', zValidator('json', registerSchema), async (c) => {
   }
 });
 
+// Logout endpoint for tenants and members
+authRouter.post('/logout', async (c) => {
+  try {
+    const token = c.req.header('Authorization')?.replace('Bearer ', '');
+    
+    // Clear server-side session if token exists
+    if (token) {
+      // Remove from active sessions
+      await c.env.USER_SESSIONS?.delete(token);
+    }
+    
+    // Audit log
+    const user = c.get('user');
+    await c.env.DB.prepare(
+      'INSERT INTO audit_logs (user_id, tenant_id, action, details, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)'
+    ).bind(
+      user?.id || 'unknown',
+      user?.tenant_id || 'unknown', 
+      'user_logout', 
+      JSON.stringify({ token: token?.substring(0, 10) + '...' })
+    ).run();
+
+    return c.json({ 
+      success: true, 
+      message: 'Logged out successfully' 
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    return c.json({ 
+      success: false, 
+      error: 'Logout failed' 
+    }, 500);
+  }
+});
+
 export { authRouter };

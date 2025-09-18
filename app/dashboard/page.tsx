@@ -4,9 +4,11 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Icons } from "@/components/ui/icons"
 import { SecureTransfer } from "@/components/dashboard/secure-transfer"
-import { MultiGatewayPayment } from "@/components/payments/multi-gateway-payment"
 import { CrossBrowserWebAuthn } from "@/components/webauthn/cross-browser-webauthn"
-import { secureApi } from "@/lib/secure-api"
+import { SoftwareOnlyNotice, PaymentBlockedNotice } from "@/components/compliance/software-only-notice"
+import { TenantBranding } from "@/components/tenant/tenant-branding"
+import { useTenant } from "@/lib/tenant-context"
+import { ApiClient } from "@/lib/api-client-mt"
 
 interface Account {
   id: string
@@ -32,6 +34,7 @@ export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
+  const { tenant, isLoading: tenantLoading } = useTenant()
 
   useEffect(() => {
     // Check authentication
@@ -51,12 +54,12 @@ export default function DashboardPage() {
   const loadDashboardData = async () => {
     try {
       const [accountsData, transactionsData] = await Promise.all([
-        secureApi.getAccounts(),
-        secureApi.getTransactions(10, 0)
+        ApiClient.getAccounts(),
+        ApiClient.get('/api/transactions')
       ])
       
-      setAccounts((accountsData as any).accounts || [])
-      setTransactions((transactionsData as any).transactions || [])
+      setAccounts(accountsData.data?.accounts || [])
+      setTransactions(transactionsData.data?.transactions || [])
     } catch (error) {
       console.error('Failed to load dashboard data:', error)
     } finally {
@@ -73,7 +76,7 @@ export default function DashboardPage() {
 
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0)
 
-  if (loading) {
+  if (loading || tenantLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -84,14 +87,19 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
+        <SoftwareOnlyNotice />
+        
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Welcome back, {user?.email?.split('@')[0] || 'User'}
-            </h1>
-            <p className="text-muted-foreground">
-              Secure banking with biometric authentication
-            </p>
+          <div className="flex items-center gap-4">
+            <TenantBranding />
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                Welcome back, {user?.email?.split('@')[0] || 'User'}
+              </h1>
+              <p className="text-muted-foreground">
+                Software-only financial dashboard
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <div className="w-4 h-4 text-green-500">
@@ -188,27 +196,8 @@ export default function DashboardPage() {
           onTransferComplete={loadDashboardData}
         />
 
-        {/* Payment Integration */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <div className="h-5 w-5">
-                <Icons.CreditCard />
-              </div>
-              Payment Integration
-            </CardTitle>
-            <CardDescription>
-              Test Paystack payment integration
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <MultiGatewayPayment 
-              onSuccess={(reference, amount, gateway) => {
-                loadDashboardData();
-              }}
-            />
-          </CardContent>
-        </Card>
+        {/* Payment Compliance Notice */}
+        <PaymentBlockedNotice />
 
         {/* WebAuthn Security */}
         <Card>

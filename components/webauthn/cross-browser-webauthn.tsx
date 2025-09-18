@@ -24,7 +24,7 @@ export function CrossBrowserWebAuthn() {
     checkWebAuthnSupport();
   }, []);
 
-  const checkWebAuthnSupport = () => {
+  const checkWebAuthnSupport = async () => {
     const isSupported = window.PublicKeyCredential !== undefined;
     const platform = navigator.platform;
     const userAgent = navigator.userAgent;
@@ -38,11 +38,17 @@ export function CrossBrowserWebAuthn() {
     const features = [];
     if (isSupported) {
       features.push('WebAuthn API');
-      if (window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
-        features.push('Platform Authenticator');
-      }
-      if (window.PublicKeyCredential.isConditionalMediationAvailable) {
-        features.push('Conditional Mediation');
+      try {
+        const platformAuth = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+        if (platformAuth) {
+          features.push('Platform Authenticator');
+        }
+        const conditionalAuth = await window.PublicKeyCredential.isConditionalMediationAvailable();
+        if (conditionalAuth) {
+          features.push('Conditional Mediation');
+        }
+      } catch (e) {
+        // Ignore errors for feature detection
       }
     }
 

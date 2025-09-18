@@ -1,0 +1,171 @@
+/* Admin Theme Variables */
+:root {
+  /* Light theme - Admin specific */
+  --admin-background: 248 250 252;
+  --admin-foreground: 15 23 42;
+  --admin-card: 255 255 255;
+  --admin-card-foreground: 15 23 42;
+  --admin-popover: 255 255 255;
+  --admin-popover-foreground: 15 23 42;
+  --admin-primary: 59 130 246;
+  --admin-primary-foreground: 248 250 252;
+  --admin-secondary: 241 245 249;
+  --admin-secondary-foreground: 15 23 42;
+  --admin-muted: 241 245 249;
+  --admin-muted-foreground: 100 116 139;
+  --admin-accent: 241 245 249;
+  --admin-accent-foreground: 15 23 42;
+  --admin-destructive: 239 68 68;
+  --admin-destructive-foreground: 248 250 252;
+  --admin-border: 226 232 240;
+  --admin-input: 226 232 240;
+  --admin-ring: 59 130 246;
+  --admin-sidebar: 255 255 255;
+  --admin-sidebar-foreground: 15 23 42;
+  --admin-sidebar-border: 226 232 240;
+  --admin-sidebar-accent: 241 245 249;
+  --admin-sidebar-accent-foreground: 15 23 42;
+  --admin-sidebar-primary: 59 130 246;
+  --admin-sidebar-primary-foreground: 248 250 252;
+}
+
+.admin-dark {
+  /* Dark theme - Admin specific */
+  --admin-background: 2 6 23;
+  --admin-foreground: 248 250 252;
+  --admin-card: 15 23 42;
+  --admin-card-foreground: 248 250 252;
+  --admin-popover: 15 23 42;
+  --admin-popover-foreground: 248 250 252;
+  --admin-primary: 59 130 246;
+  --admin-primary-foreground: 15 23 42;
+  --admin-secondary: 30 41 59;
+  --admin-secondary-foreground: 248 250 252;
+  --admin-muted: 30 41 59;
+  --admin-muted-foreground: 148 163 184;
+  --admin-accent: 30 41 59;
+  --admin-accent-foreground: 248 250 252;
+  --admin-destructive: 239 68 68;
+  --admin-destructive-foreground: 248 250 252;
+  --admin-border: 30 41 59;
+  --admin-input: 30 41 59;
+  --admin-ring: 59 130 246;
+  --admin-sidebar: 15 23 42;
+  --admin-sidebar-foreground: 248 250 252;
+  --admin-sidebar-border: 30 41 59;
+  --admin-sidebar-accent: 30 41 59;
+  --admin-sidebar-accent-foreground: 248 250 252;
+  --admin-sidebar-primary: 59 130 246;
+  --admin-sidebar-primary-foreground: 15 23 42;
+}
+
+/* Admin Layout Styles */
+.admin-layout {
+  background-color: rgb(var(--admin-background));
+  color: rgb(var(--admin-foreground));
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  background-color: rgb(var(--admin-sidebar));
+  border-color: rgb(var(--admin-sidebar-border));
+  color: rgb(var(--admin-sidebar-foreground));
+}
+
+.admin-card {
+  background-color: rgb(var(--admin-card));
+  border-color: rgb(var(--admin-border));
+  color: rgb(var(--admin-card-foreground));
+}
+
+.admin-nav-item {
+  color: rgb(var(--admin-sidebar-foreground));
+  transition: all 0.2s ease;
+}
+
+.admin-nav-item:hover {
+  background-color: rgb(var(--admin-sidebar-accent));
+  color: rgb(var(--admin-sidebar-accent-foreground));
+}
+
+.admin-nav-item.active {
+  background-color: rgb(var(--admin-sidebar-primary));
+  color: rgb(var(--admin-sidebar-primary-foreground));
+}
+
+.admin-theme-toggle {
+  color: rgb(var(--admin-sidebar-foreground));
+}
+
+.admin-theme-toggle:hover {
+  background-color: rgb(var(--admin-sidebar-accent));
+}
+
+/* Admin specific component overrides */
+.admin-layout .card,
+.admin-card {
+  background-color: rgb(var(--admin-card));
+  border-color: rgb(var(--admin-border));
+  color: rgb(var(--admin-card-foreground));
+  border: 1px solid rgb(var(--admin-border));
+}
+
+.admin-layout .button {
+  transition: all 0.2s ease;
+}
+
+.admin-layout .input {
+  background-color: rgb(var(--admin-card));
+  border-color: rgb(var(--admin-border));
+  color: rgb(var(--admin-foreground));
+}
+
+.admin-layout .badge {
+  transition: all 0.2s ease;
+}
+
+/* Input and form styling */
+.admin-layout input,
+.admin-layout textarea,
+.admin-layout select {
+  background-color: rgb(var(--admin-card));
+  border-color: rgb(var(--admin-border));
+  color: rgb(var(--admin-foreground));
+}
+
+.admin-layout input:focus,
+.admin-layout textarea:focus,
+.admin-layout select:focus {
+  border-color: rgb(var(--admin-primary));
+  box-shadow: 0 0 0 1px rgb(var(--admin-primary));
+}
+
+/* Button styling */
+.admin-layout button {
+  transition: all 0.2s ease;
+}
+
+.admin-layout button:hover {
+  opacity: 0.9;
+}
+
+/* Loading states */
+.admin-layout .animate-pulse {
+  background-color: rgb(var(--admin-muted));
+}
+
+.admin-layout .animate-pulse > div {
+  background-color: rgb(var(--admin-muted));
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .admin-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  
+  .admin-sidebar.open {
+    transform: translateX(0);
+  }
+}
