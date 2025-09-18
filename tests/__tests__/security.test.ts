@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ComplianceValidator, ComplianceReporter } from '../lib/compliance'
+import { ComplianceValidator, ComplianceReporter } from '../../lib/compliance'
 
 describe('Banking Security Compliance', () => {
   describe('NIST SP 800-63B Level 3 Validation', () => {

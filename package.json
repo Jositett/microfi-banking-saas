@@ -1,12 +1,12 @@
 {
-  "name": "microfi-banking-saas",
+  "name": "microfi-business-management",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "build:frontend": "next build",
     "build:backend": "cd backend && npm run type-check",
-    "build": "npm run build:frontend",
+    "build": "npm run cbmp:compliance-check && npm run build:frontend",
     "dev": "next dev",
     "dev:backend": "cd backend && npm run dev",
     "lint": "next lint",
@@ -17,6 +17,9 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run tests",
+    "cbmp:compliance-check": "node scripts/cbmp-compliance-check.cjs",
+    "cbmp:migrate": "cd backend && npx wrangler d1 execute microfi-banking --file migrations/009_cbmp_compliance.sql",
+    "cbmp:verify": "npm run cbmp:compliance-check && echo 'CBMP Compliance verified - ready for deployment'",
     "error-report": "node scripts/generate-error-report.js"
   },
   "dependencies": {
@@ -61,6 +64,7 @@
     "lucide-react": "^0.454.0",
     "next": "^15.5.3",
     "next-themes": "^0.4.6",
+    "node-fetch": "^3.3.2",
     "react": "^18",
     "react-day-picker": "latest",
     "react-dom": "^18",

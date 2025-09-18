@@ -3,13 +3,28 @@ import { verifyJWT } from '../lib/crypto';
 import type { HonoContext } from '../types/hono';
 import type { User } from '../types/context';
 
+export interface User extends User {
+  tenant_id: string;
+}
+import type { Tenant } from './tenant-resolver';
+
 export interface JWTPayload {
   userId: string;
   email: string;
   role: 'admin' | 'user';
+  tenant_id?: string;
 }
 
 export const authMiddleware = async (c: HonoContext, next: Next) => {
+  // Skip auth for health check and auth endpoints
+  if (c.req.path === '/health' || c.req.path.startsWith('/auth/')) {
+    await next();
+    return;
+  }
+
+  const tenant: Tenant = c.get('tenant');
+  const isAdminRoute = c.req.path.startsWith('/api/admin/');
+  
   // Get token from Authorization header or cookie
   let token = c.req.header('Authorization')?.replace('Bearer ', '');
   
@@ -39,9 +54,18 @@ export const authMiddleware = async (c: HonoContext, next: Next) => {
         const userId = parts[2];
         
         // Fetch user from database
-        const dbUser = await c.env.DB.prepare(
-          'SELECT id, email, role FROM users WHERE id = ?'
-        ).bind(userId).first();
+        let dbUser;
+        if (isAdminRoute) {
+          // Admin users don't need tenant isolation
+          dbUser = await c.env.DB.prepare(
+            'SELECT id, email, role, tenant_id FROM users WHERE id = ?'
+          ).bind(userId).first();
+        } else {
+          // Regular users need tenant isolation
+          dbUser = await c.env.DB.prepare(
+            'SELECT id, email, role, tenant_id FROM users WHERE id = ? AND tenant_id = ?'
+          ).bind(userId, tenant?.id || 'demo-tenant').first();
+        }
         
         if (!dbUser) {
           return c.json({ error: 'User not found' }, 401);
@@ -50,7 +74,8 @@ export const authMiddleware = async (c: HonoContext, next: Next) => {
         user = {
           id: dbUser.id as string,
           email: dbUser.email as string,
-          role: dbUser.role as 'user' | 'admin'
+          role: dbUser.role as 'user' | 'admin',
+          tenant_id: dbUser.tenant_id as string
         };
       } else {
         return c.json({ error: 'Invalid demo token format' }, 401);
@@ -59,10 +84,30 @@ export const authMiddleware = async (c: HonoContext, next: Next) => {
       // Handle JWT tokens (for production)
       const payload = await verifyJWT(token, c.env.JWT_SECRET) as JWTPayload;
       
+      // Skip tenant validation for admin routes
+      if (!isAdminRoute) {
+        // Verify tenant context matches token
+        if (tenant && payload.tenant_id && payload.tenant_id !== tenant.id) {
+          return c.json({ 
+            error: 'Invalid tenant context',
+            message: 'Token does not match current tenant'
+          }, 403);
+        }
+      }
+      
       // Fetch fresh user data from database
-      const dbUser = await c.env.DB.prepare(
-        'SELECT id, email, role FROM users WHERE id = ?'
-      ).bind(payload.userId).first();
+      let dbUser;
+      if (isAdminRoute) {
+        // Admin users don't need tenant isolation
+        dbUser = await c.env.DB.prepare(
+          'SELECT id, email, role, tenant_id FROM users WHERE id = ?'
+        ).bind(payload.userId).first();
+      } else {
+        // Regular users need tenant isolation
+        dbUser = await c.env.DB.prepare(
+          'SELECT id, email, role, tenant_id FROM users WHERE id = ? AND tenant_id = ?'
+        ).bind(payload.userId, tenant?.id || payload.tenant_id).first();
+      }
       
       if (!dbUser) {
         return c.json({ error: 'User not found' }, 401);
@@ -71,7 +116,8 @@ export const authMiddleware = async (c: HonoContext, next: Next) => {
       user = {
         id: dbUser.id as string,
         email: dbUser.email as string,
-        role: dbUser.role as 'user' | 'admin'
+        role: dbUser.role as 'user' | 'admin',
+        tenant_id: dbUser.tenant_id as string
       };
     }
     

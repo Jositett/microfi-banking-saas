@@ -1,3 +1,7 @@
+export async function signJWT(payload: any, secret: string, expiresIn: string = '24h'): Promise<string> {
+  return generateJWT(payload, secret, expiresIn);
+}
+
 export async function generateJWT(payload: any, secret: string, expiresIn: string = '24h'): Promise<string> {
   const header = { alg: 'HS256', typ: 'JWT' };
   const now = Math.floor(Date.now() / 1000);

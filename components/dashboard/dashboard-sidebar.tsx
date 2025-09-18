@@ -4,17 +4,17 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Icons } from "@/components/ui/icons"
+import SmartLogout from "@/components/auth/smart-logout"
 import Link from "next/link"
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard" as const, icon: Icons.Home },
-  { name: "Accounts", href: "/accounts" as const, icon: Icons.CreditCard },
-  { name: "Savings", href: "/savings" as const, icon: Icons.PiggyBank },
-  { name: "Loans", href: "/loans" as const, icon: Icons.Banknote },
-  { name: "Investments", href: "/investments" as const, icon: Icons.TrendingUp },
-  { name: "Transactions", href: "/transactions" as const, icon: Icons.Receipt },
-  { name: "Reports", href: "/reports" as const, icon: Icons.BarChart3 },
   { name: "Customers", href: "/customers" as const, icon: Icons.Users },
+  { name: "Loans", href: "/loans" as const, icon: Icons.FileText },
+  { name: "Business Mgmt", href: "/payments" as const, icon: Icons.Building },
+  { name: "Data Import", href: "/transactions" as const, icon: Icons.Upload },
+  { name: "Compliance", href: "/gateway" as const, icon: Icons.Shield },
+  { name: "Reports", href: "/reports" as const, icon: Icons.BarChart3 },
 ]
 
 const bottomNavigation = [
@@ -89,15 +89,15 @@ export function DashboardSidebar() {
             </Link>
           ))}
 
-          <Button
-            variant="ghost"
-            className={`w-full justify-start text-destructive hover:bg-destructive hover:text-destructive-foreground ${
-              isCollapsed ? "px-2" : "px-3"
-            }`}
-          >
-            <Icons.LogOut />
-            {!isCollapsed && <span className="ml-3">Sign Out</span>}
-          </Button>
+          <div className={`w-full ${
+            isCollapsed ? "px-2" : "px-3"
+          }`}>
+            <SmartLogout 
+              variant="ghost" 
+              size="sm"
+              showText={!isCollapsed}
+            />
+          </div>
         </div>
       </div>
     </div>

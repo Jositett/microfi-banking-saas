@@ -311,18 +311,22 @@
     });
     ```
 
-30. **Payment Gateway Integration** ✅
-    - ✅ Unified payment interface for Paystack, Flutterwave
-    - ✅ API keys stored in Workers Secrets
-    - ✅ Webhook handlers for payment confirmations
-    - ✅ Retry logic for failed transactions
+30. **🚨 CBMP COMPLIANCE - BUSINESS MANAGEMENT ONLY** 🚨
+    - ❌ **COMPLETELY PROHIBITED**: Any payment-related code or interfaces
+    - ❌ **COMPLETELY PROHIBITED**: Payment gateway configurations
+    - ❌ **COMPLETELY PROHIBITED**: Real-time payment system connections
+    - ❌ **COMPLETELY PROHIBITED**: Payment credential storage (any form)
+    - ✅ **ALLOWED**: CSV data import for business reporting
+    - ✅ **ALLOWED**: Software subscription billing (platform revenue only)
+    - ✅ **ALLOWED**: Pure business management features (CRM, HR, documents)
 
 31. **Communication Services Integration** ✅
-    - ✅ Hubtel SMS service for OTPs and alerts
-    - ✅ Resend Email service for notifications
-    - ✅ Banking-grade templates with security messaging
+    - ✅ Hubtel SMS service for business alerts and notifications
+    - ✅ Resend Email service for system notifications
+    - ✅ Business management templates (loan status, KYC updates)
     - ✅ Comprehensive audit logging for all communications
-    - ✅ Multi-channel notification system
+    - ✅ Multi-channel notification system for business operations
+    - ❌ **COMPLETELY PROHIBITED**: Any payment-related communications
 
 31. **Audit Trail Implementation**
     ```ts
@@ -425,13 +429,147 @@
     - Cache WebAuthn credentials in KV for sub-100ms authentication
     - Use edge-optimized KV for global MFA verification
 
-## Backend-Frontend Integration Rules
+## 🚨 CBMP COMPLIANCE RULES (MANDATORY - 100% LEGAL)
 
-37. **Authentication Flow Standards**
-    - **Dual Token Storage**: Always store auth tokens in both localStorage AND cookies
-    - **Response Type Consistency**: Backend and frontend must use identical response interfaces
-    - **Proper Redirects**: Use `window.location.href` for post-authentication redirects, not router.push
-    - **Client-Side Auth Checks**: Always verify authentication in useEffect before loading protected content
+47. **CORE PRINCIPLE - PURE BUSINESS MANAGEMENT SaaS**
+    - **Zero payment-related code anywhere in system**
+    - **CSV-only data import for all financial information**
+    - **Pure business management features only**
+    - **Absolute regulatory safety with zero risk**
+
+48. **COMPLETELY PROHIBITED OPERATIONS**
+    ```typescript
+    // BLOCK ALL PAYMENT-RELATED CODE AND ROUTES
+    const COMPLETELY_BLOCKED = [
+      '/payment', '/transfer', '/deposit', '/withdraw', '/charge',
+      '/payout', '/gateway', '/paystack', '/flutterwave', '/momo',
+      '/balance', '/transaction', '/fund', '/wallet', '/billing'
+    ];
+    
+    app.use('*', (c, next) => {
+      if (COMPLETELY_BLOCKED.some(route => c.req.path.includes(route))) {
+        return c.json({ 
+          error: 'Payment features completely removed for compliance',
+          message: 'MicroFi is pure business management software only',
+          compliance: 'BoG/CBN compliant - zero payment code'
+        }, 403);
+      }
+      return next();
+    });
+    ```
+
+49. **ALLOWED BUSINESS MANAGEMENT OPERATIONS**
+    - **Customer Relationship Management**: Client profiles and KYC documents
+    - **Loan Application Tracking**: Manual status updates (no payment processing)
+    - **CSV Data Import**: Manual upload of business data from external systems
+    - **Expense Categorization**: Basic reporting from uploaded CSV data
+    - **Staff Management**: HR and employee management features
+
+50. **DATA IMPORT RULES (CSV-ONLY)**
+    - **No API connections to payment systems**
+    - **Manual CSV upload only** for all financial data
+    - **Business data only** (no payment credentials or transaction processing)
+    - **Tenant uploads data from their own licensed payment systems**
+
+51. **ABSOLUTE COMPLIANCE MIDDLEWARE**
+    ```typescript
+    export const cbmpComplianceMiddleware = async (c: Context, next: Next) => {
+      // Block ANY payment-related operations
+      const paymentKeywords = [
+        'payment', 'charge', 'transfer', 'balance', 'transaction',
+        'paystack', 'flutterwave', 'momo', 'gateway', 'fund'
+      ];
+      
+      const path = c.req.path.toLowerCase();
+      if (paymentKeywords.some(keyword => path.includes(keyword))) {
+        return c.json({
+          error: 'CBMP Compliance: Payment features removed',
+          message: 'Pure business management software only',
+          compliance: 'BoG/CBN exempt - zero payment code',
+          alternative: 'Use CSV upload for business data import'
+        }, 403);
+      }
+      await next();
+    };
+    ```
+
+52. **SUBSCRIPTION BILLING (SOFTWARE LICENSE ONLY)**
+    - **Only charge for software license** (GHS 20-50/month)
+    - **Use platform's own payment account** (completely separate)
+    - **Never touch tenant's business operations**
+    - **Clear separation: software licensing vs business management**
+
+## 🚨 **CBMP COMPLIANCE VERIFICATION**
+
+62. **AUTOMATED COMPLIANCE CHECKS**
+    ```typescript
+    // Run before every deployment
+    export const cbmpComplianceCheck = {
+      codebaseCheck: () => {
+        const paymentKeywords = [
+          'paystack', 'flutterwave', 'momo', 'payment', 'charge',
+          'transfer', 'balance', 'transaction', 'gateway'
+        ];
+        // Scan entire codebase for prohibited keywords
+        return scanCodebase(paymentKeywords);
+      },
+      
+      databaseCheck: () => {
+        const prohibitedTables = [
+          'payments', 'transactions', 'balances', 'gateways'
+        ];
+        const prohibitedColumns = [
+          'amount', 'balance', 'transaction_id', 'payment_status'
+        ];
+        // Verify database schema compliance
+        return validateDatabaseSchema(prohibitedTables, prohibitedColumns);
+      },
+      
+      routeCheck: () => {
+        const prohibitedRoutes = [
+          '/payment', '/transfer', '/charge', '/gateway', '/balance'
+        ];
+        // Verify all payment routes return 403
+        return testRouteBlocking(prohibitedRoutes);
+      }
+    };
+    ```
+
+63. **DEPLOYMENT COMPLIANCE GATE**
+    ```bash
+    # Pre-deployment compliance check (MANDATORY)
+    npm run cbmp:compliance-check
+    
+    # Only deploy if 100% compliant
+    if [ $? -eq 0 ]; then
+      echo "✅ CBMP Compliance verified - deploying"
+      wrangler deploy
+    else
+      echo "❌ CBMP Compliance failed - blocking deployment"
+      exit 1
+    fi
+    ```
+
+## Multi-Tenant SaaS Architecture Rules
+
+37. **Domain Routing Standards**
+    - **Root Domain**: `microfi.com` serves public marketing site and demo
+    - **Admin Panel**: `admin.microfi.com` for tenant management (separate auth)
+    - **Tenant Subdomains**: `client1.microfi.com` for isolated tenant instances
+    - **Custom Domains**: `mymfi.com` for client-branded instances
+    - **Host Header Validation**: Always validate host against tenants table
+
+38. **Tenant Isolation Rules**
+    - **Zero-Trust Database**: ALL queries MUST include `tenant_id = ?`
+    - **JWT Tenant Context**: All tokens MUST include `tenant_id` claim
+    - **Host Verification**: Verify JWT `tenant_id` matches host header
+    - **No Cross-Tenant Access**: Strict data isolation enforced at application layer
+
+39. **Authentication Flow Standards**
+    - **Tenant-Scoped Tokens**: JWT tokens include both `user_id` and `tenant_id`
+    - **Host-Based Routing**: Authentication context determined by host header
+    - **Admin vs Tenant Auth**: Separate authentication systems for admin and tenants
+    - **Client-Side Auth Checks**: Always verify tenant context before loading data
 
 38. **API Response Standards**
     - **Consistent Error Format**: All API errors must follow standard format
@@ -445,17 +583,19 @@
     - **Graceful Degradation**: Disable strict MFA requirements in demo/development mode
     - **Route Protection**: Protect `/api/*` routes but allow `/auth/*` and `/health` endpoints
 
-40. **Database Integration Standards**
-    - **Demo Data Seeding**: Always provide working demo data with simple passwords
-    - **Migration Scripts**: Use separate files for schema and demo data
-    - **Password Updates**: Provide update scripts to change demo passwords for testing
-    - **Data Consistency**: Ensure demo data matches frontend expectations
+40. **Multi-Tenant Database Standards**
+    - **Tenant Table**: Master source of truth for all tenant routing
+    - **Tenant ID Enforcement**: Every table MUST have `tenant_id` foreign key
+    - **Query Isolation**: No queries without `tenant_id` parameter binding
+    - **Data Sovereignty**: Country-specific D1 regions (GH, NG, KE)
+    - **Migration Scripts**: Include tenant_id in all table schemas
 
-41. **Development Workflow Rules**
-    - **Backend First**: Always start backend server before frontend during development
-    - **Port Consistency**: Backend on 8787, Frontend on 3000 (document in README)
-    - **Environment Sync**: Keep .env.example files updated with required variables
-    - **API Testing**: Test all endpoints with curl before frontend integration
+41. **Multi-Tenant Development Workflow**
+    - **Host Routing**: Test with different host headers for tenant isolation
+    - **Tenant Context**: Always test with valid tenant_id in JWT tokens
+    - **Public Site Testing**: Test marketing site on root domain separately
+    - **Admin Panel Testing**: Test admin functionality on admin subdomain
+    - **DNS Setup**: Configure local DNS for subdomain testing
 
 42. **Error Prevention Checklist**
     - **Before Login Implementation**: Verify backend returns expected response format
@@ -485,3 +625,119 @@
     - **Middleware Flags**: Use environment variables to enable/disable security features
     - **Audit Trail**: Log all authentication events even in demo mode
     - **Token Expiration**: Implement proper token expiration even for demo tokens
+
+## 🚨 CBMP COMPLIANCE ENFORCEMENT (MANDATORY - 100% LEGAL)
+
+53. **CRITICAL COMPLIANCE MIDDLEWARE ORDER**
+    ```typescript
+    // MUST BE FIRST - ABSOLUTE COMPLIANCE
+    app.use('*', cbmpComplianceMiddleware);    // Block ALL payment code
+    app.use('*', businessOnlyMiddleware);      // Business management only
+    app.use('*', csvOnlyMiddleware);           // CSV import enforcement
+    app.use('*', auditComplianceMiddleware);   // Log all violations
+    // Then other middleware...
+    ```
+
+54. **ABSOLUTE LEGAL PROTECTION REQUIREMENTS**
+    - **Every API Response**: Must include CBMP compliance headers
+    - **Complete Payment Blocking**: Return 403 for ANY payment-related request
+    - **Audit Logging**: Log every blocked attempt for legal protection
+    - **Terms of Service**: Clear business management software status
+    - **Zero Payment Code**: Absolutely no payment-related code anywhere
+
+55. **ALLOWED OPERATIONS (BUSINESS MANAGEMENT ONLY)**
+    - ✅ Customer relationship management (CRM)
+    - ✅ Loan application tracking (manual status only)
+    - ✅ CSV data import and basic reporting
+    - ✅ Staff and HR management
+    - ✅ Document management and KYC uploads
+    - ✅ Software subscription billing (platform revenue only)
+
+56. **COMPLETELY PROHIBITED OPERATIONS**
+    - ❌ ANY payment processing code or interfaces
+    - ❌ Payment gateway configurations or API connections
+    - ❌ Transaction processing, transfers, or fund movements
+    - ❌ Payment credential storage (even encrypted)
+    - ❌ Real-time payment system integrations
+    - ❌ Balance tracking or financial calculations
+
+57. **TECHNICAL ENFORCEMENT RULES (CBMP)**
+    - **Complete Route Blocking**: ALL payment-related routes → 403
+    - **Database Schema**: Zero payment-related fields in any table
+    - **Code Scanning**: Automated checks for payment-related keywords
+    - **Compliance Headers**: Every response declares business-only status
+    - **CSV-Only Import**: Manual data upload is the only financial data source
+
+## 📜 **MANDATORY TOS CLAUSE (CBMP VERSION)**
+
+58. **LEGAL PROTECTION CLAUSE**
+    ```html
+    <!-- MUST BE INCLUDED IN ALL PAGES -->
+    <div class="compliance-notice">
+      <p><strong>Business Management Software Only</strong></p>
+      <p>This platform is pure business management SaaS. We:</p>
+      <ul>
+        <li>Do not process payments or handle funds</li>
+        <li>Do not access payment systems (Paystack, MTN MoMo, Flutterwave)</li>
+        <li>Do not store payment credentials or transaction data</li>
+        <li>Do not set up payment systems for clients</li>
+      </ul>
+      <p>Clients are solely responsible for managing their own payment operations via their licensed payment providers.</p>
+      <p><strong>Compliance:</strong> BoG/CBN exempt - software provider only</p>
+    </div>
+    ```
+
+## 📋 **CBMP IMPLEMENTATION CHECKLIST**
+
+59. **MANDATORY REMOVAL CHECKLIST**
+    - [ ] Delete all payment gateway configuration pages
+    - [ ] Remove payment credential storage and encryption services
+    - [ ] Remove all payment processing endpoints and middleware
+    - [ ] Delete transaction amount fields and balance tracking
+    - [ ] Remove payment-related database tables and schemas
+    - [ ] Update all UI components to remove payment references
+    - [ ] Replace payment features with CSV import functionality
+
+60. **CBMP FEATURE IMPLEMENTATION**
+    ```typescript
+    // CBMP-Compliant Features Only
+    const ALLOWED_FEATURES = {
+      crm: 'Customer relationship management',
+      loans: 'Loan application tracking (manual status)',
+      csv: 'CSV data import and reporting',
+      hr: 'Staff and employee management',
+      documents: 'Document management and KYC uploads',
+      subscription: 'Software license billing (platform only)'
+    };
+    
+    const PROHIBITED_FEATURES = {
+      payments: 'Any payment processing',
+      gateways: 'Payment gateway configurations',
+      transactions: 'Real-time transaction processing',
+      balances: 'Account balance tracking',
+      transfers: 'Fund transfer operations'
+    };
+    ```
+
+61. **CSV-ONLY DATA IMPORT SYSTEM**
+    ```typescript
+    // CSV Import Service (CBMP Compliant)
+    export class CSVImportService {
+      async importBusinessData(file: File, tenantId: string) {
+        // Only business data - no payment processing
+        const allowedColumns = [
+          'customer_name', 'loan_status', 'application_date',
+          'kyc_status', 'staff_name', 'expense_category'
+        ];
+        
+        // Block any payment-related columns
+        const prohibitedColumns = [
+          'amount', 'balance', 'transaction_id', 'payment_status',
+          'gateway_response', 'account_number'
+        ];
+        
+        // Validate CSV contains only business management data
+        return this.processBusinessCSV(file, tenantId, allowedColumns);
+      }
+    }
+    ```

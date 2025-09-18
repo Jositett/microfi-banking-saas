@@ -14,15 +14,16 @@ const createAccountSchema = z.object({
 // Get user accounts
 accountsRouter.get('/', async (c) => {
   const user = c.get('user');
+  const tenant = c.get('tenant');
   if (!user) return c.json({ error: 'User not found' }, 401);
 
   try {
     const accounts = await c.env.DB.prepare(`
       SELECT id, account_number, balance, currency, type, status, created_at
       FROM accounts 
-      WHERE user_id = ? AND status = 'active'
+      WHERE user_id = ? AND tenant_id = ? AND status = 'active'
       ORDER BY created_at DESC
-    `).bind(user.id).all();
+    `).bind(user.id, tenant.id).all();
 
     // Log account access
     const auditService = new AuditService(c.env);
@@ -59,9 +60,9 @@ accountsRouter.post('/', zValidator('json', createAccountSchema), async (c) => {
     const accountNumber = generateAccountNumber();
 
     await c.env.DB.prepare(`
-      INSERT INTO accounts (id, user_id, account_number, type, currency, balance, status, created_at)
-      VALUES (?, ?, ?, ?, ?, 0, 'active', CURRENT_TIMESTAMP)
-    `).bind(accountId, user.id, accountNumber, type, currency).run();
+      INSERT INTO accounts (id, user_id, tenant_id, account_number, type, currency, balance, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, 0, 'active', CURRENT_TIMESTAMP)
+    `).bind(accountId, user.id, tenant.id, accountNumber, type, currency).run();
 
     // Log account creation
     const auditService = new AuditService(c.env);
@@ -101,8 +102,8 @@ accountsRouter.get('/:id/balance', async (c) => {
   try {
     const account = await c.env.DB.prepare(`
       SELECT balance, currency FROM accounts 
-      WHERE id = ? AND user_id = ? AND status = 'active'
-    `).bind(accountId, user.id).first();
+      WHERE id = ? AND user_id = ? AND tenant_id = ? AND status = 'active'
+    `).bind(accountId, user.id, tenant.id).first();
 
     if (!account) {
       return c.json({ error: 'Account not found' }, 404);

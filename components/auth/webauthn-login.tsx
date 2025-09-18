@@ -1,104 +1,109 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Icons } from "@/components/ui/icons"
-import { webauthnClient } from "@/lib/webauthn"
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Fingerprint, Shield } from 'lucide-react';
+import { WebAuthnClient } from '@/lib/webauthn-client';
 
 interface WebAuthnLoginProps {
-  onSuccess: (user: any, token: string) => void
-  onCancel: () => void
+  userId: string;
+  onSuccess?: (sessionToken: string) => void;
+  onError?: (error: string) => void;
+  className?: string;
 }
 
-export function WebAuthnLogin({ onSuccess, onCancel }: WebAuthnLoginProps) {
-  const [isAuthenticating, setIsAuthenticating] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+export default function WebAuthnLogin({ 
+  userId, 
+  onSuccess, 
+  onError,
+  className = ''
+}: WebAuthnLoginProps) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [supported, setSupported] = useState<boolean | null>(null);
 
-  const handleWebAuthnLogin = async () => {
-    if (!webauthnClient.isWebAuthnSupported()) {
-      setError("WebAuthn is not supported in this browser")
-      return
-    }
+  const checkSupport = async () => {
+    const isSupported = await WebAuthnClient.isSupported();
+    setSupported(isSupported);
+  };
 
-    setIsAuthenticating(true)
-    setError(null)
+  const handleAuthenticate = async () => {
+    setLoading(true);
+    setError('');
 
     try {
-      // For demo, use a default user ID - in production this would come from a username field
-      const result = await webauthnClient.authenticateCredential("demo-user-1")
+      const result = await WebAuthnClient.authenticate(userId);
       
-      if (result.verified) {
-        // Mock user data for successful WebAuthn login
-        const user = {
-          id: "demo-user-1",
-          email: "john.doe@microfi.com",
-          role: "user",
-          mfaSetup: true
-        }
-        onSuccess(user, result.sessionToken || "webauthn_token_" + Date.now())
+      if (result.success && result.sessionToken) {
+        onSuccess?.(result.sessionToken);
       } else {
-        setError("Authentication failed. Please try again.")
+        setError(result.error || 'Authentication failed');
+        onError?.(result.error || 'Authentication failed');
       }
-    } catch (error) {
-      console.error("WebAuthn login error:", error)
-      setError("Authentication failed. Please ensure your authenticator is available.")
+    } catch (err) {
+      const errorMsg = 'WebAuthn authentication failed';
+      setError(errorMsg);
+      onError?.(errorMsg);
     } finally {
-      setIsAuthenticating(false)
+      setLoading(false);
     }
+  };
+
+  // Check support on component mount
+  if (supported === null) {
+    checkSupport();
+    return (
+      <div className={`flex items-center justify-center p-4 ${className}`}>
+        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-sm">Checking biometric support...</span>
+      </div>
+    );
+  }
+
+  if (!supported) {
+    return (
+      <div className={className}>
+        <Alert>
+          <Shield className="w-4 h-4" />
+          <AlertDescription>
+            Biometric authentication not available in this browser.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   return (
-    <Card>
-      <CardHeader className="text-center">
-        <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-          <Icons.Fingerprint className="w-8 h-8 text-primary-foreground" />
-        </div>
-        <CardTitle>Biometric Login</CardTitle>
-        <CardDescription>
-          Sign in securely with your fingerprint, face, or security key
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {error && (
-          <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-            <p className="text-sm text-destructive">{error}</p>
-          </div>
+    <div className={`space-y-3 ${className}`}>
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <Button 
+        onClick={handleAuthenticate} 
+        disabled={loading}
+        variant="outline"
+        className="w-full flex items-center justify-center"
+      >
+        {loading ? (
+          <>
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+            Authenticating...
+          </>
+        ) : (
+          <>
+            <Fingerprint className="w-4 h-4 mr-2" />
+            Use Biometric Authentication
+          </>
         )}
+      </Button>
 
-        <div className="flex space-x-3">
-          <Button 
-            variant="outline" 
-            onClick={onCancel}
-            disabled={isAuthenticating}
-            className="flex-1"
-          >
-            Back to Login
-          </Button>
-          <Button 
-            onClick={handleWebAuthnLogin} 
-            disabled={isAuthenticating}
-            className="flex-1"
-          >
-            {isAuthenticating ? (
-              <>
-                <Icons.Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Authenticating...
-              </>
-            ) : (
-              <>
-                <Icons.Fingerprint className="w-4 h-4 mr-2" />
-                Sign In
-              </>
-            )}
-          </Button>
-        </div>
-
-        <div className="text-xs text-muted-foreground text-center">
-          <Icons.Shield className="w-3 h-3 inline mr-1" />
-          Bank-level security with biometric authentication
-        </div>
-      </CardContent>
-    </Card>
-  )
+      <div className="text-xs text-center text-gray-500">
+        Touch ID • Face ID • Windows Hello • Security Keys
+      </div>
+    </div>
+  );
 }

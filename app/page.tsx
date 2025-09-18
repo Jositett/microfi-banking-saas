@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { LoginForm } from "@/components/auth/login-form"
-import { WebAuthnLogin } from "@/components/auth/webauthn-login"
+import WebAuthnLogin from "@/components/auth/webauthn-login"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Icons } from "@/components/ui/icons"
@@ -30,8 +30,13 @@ export default function HomePage() {
             <p className="text-muted-foreground">Secure Biometric Authentication</p>
           </div>
           <WebAuthnLogin 
-            onSuccess={handleWebAuthnSuccess}
-            onCancel={() => setShowWebAuthnLogin(false)}
+            userId="demo-user"
+            onSuccess={(token) => {
+              // For demo purposes, create a mock user
+              const user = { id: 'demo-user', email: 'demo@microfi.com', role: 'user' };
+              handleWebAuthnSuccess(user, token);
+            }}
+            onError={() => setShowWebAuthnLogin(false)}
           />
         </div>
       </div>
